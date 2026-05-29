@@ -22,9 +22,9 @@ inline float paddingAndBorderForAxis(
     const Direction direction,
     const float widthSize) {
   return node->style().computeInlineStartPaddingAndBorder(
-             axis, direction, widthSize) +
+             axis, direction, widthSize, node->getConfig()) +
       node->style().computeInlineEndPaddingAndBorder(
-          axis, direction, widthSize);
+          axis, direction, widthSize, node->getConfig());
 }
 
 inline FloatOptional boundAxisWithinMinAndMax(
@@ -39,14 +39,14 @@ inline FloatOptional boundAxisWithinMinAndMax(
 
   if (isColumn(axis)) {
     min = node->style().resolvedMinDimension(
-        direction, Dimension::Height, axisSize, widthSize);
+        direction, Dimension::Height, axisSize, widthSize, node->getConfig());
     max = node->style().resolvedMaxDimension(
-        direction, Dimension::Height, axisSize, widthSize);
+        direction, Dimension::Height, axisSize, widthSize, node->getConfig());
   } else if (isRow(axis)) {
     min = node->style().resolvedMinDimension(
-        direction, Dimension::Width, axisSize, widthSize);
+        direction, Dimension::Width, axisSize, widthSize, node->getConfig());
     max = node->style().resolvedMaxDimension(
-        direction, Dimension::Width, axisSize, widthSize);
+        direction, Dimension::Width, axisSize, widthSize, node->getConfig());
   }
 
   if (max >= FloatOptional{0} && value > max) {

@@ -22,6 +22,11 @@ struct YGExpression;
 /**
  * Serialise a YGExpression builder tree into a flat ExpressionNode vector
  * with the root at index 0, for passing to StyleValuePool::store().
+ *
+ * env() variable names are interned to stable ids by the process-global
+ * registry (facebook::yoga::internEnvName), so no Config is needed here — a
+ * serialised id is valid in any Config. This keeps serialisation callable from
+ * contexts with no node/config in scope (e.g. React Native's Fabric prop path).
  * Implemented in YGExpression.cpp.
  */
 std::vector<facebook::yoga::ExpressionNode> YGExpressionSerialise(

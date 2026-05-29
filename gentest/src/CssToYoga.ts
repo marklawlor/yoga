@@ -16,6 +16,8 @@ function isMathExpression(value: string): boolean {
   const t = value.trimStart().toLowerCase();
   return (
     t.startsWith('calc(') ||
+    // env() flows through the same native YGExpressionParse path as calc/min/max.
+    t.startsWith('env(') ||
     t.startsWith('min(') ||
     t.startsWith('max(') ||
     t.startsWith('clamp(')

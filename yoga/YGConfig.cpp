@@ -6,8 +6,11 @@
  */
 
 #include <yoga/Yoga.h>
+#include <yoga/config/Config.h>
 #include <yoga/debug/AssertFatal.h>
 #include <yoga/debug/Log.h>
+#include <yoga/numeric/Comparison.h>
+#include <yoga/numeric/FloatOptional.h>
 
 using namespace facebook;
 using namespace facebook::yoga;
@@ -45,6 +48,40 @@ void YGConfigSetPointScaleFactor(
 
 float YGConfigGetPointScaleFactor(const YGConfigConstRef config) {
   return resolveRef(config)->getPointScaleFactor();
+}
+
+void YGConfigSetEnv(
+    const YGConfigRef config,
+    const char* name,
+    const float value) {
+  if (name == nullptr) {
+    return;
+  }
+  // YGUndefined clears the value (== remove).
+  resolveRef(config)->setEnv(
+      name, yoga::isUndefined(value) ? FloatOptional{} : FloatOptional{value});
+}
+
+void YGConfigRemoveEnv(const YGConfigRef config, const char* name) {
+  if (name == nullptr) {
+    return;
+  }
+  resolveRef(config)->removeEnv(name);
+}
+
+float YGConfigGetEnv(const YGConfigConstRef config, const char* name) {
+  if (name == nullptr) {
+    return YGUndefined;
+  }
+  FloatOptional value = resolveRef(config)->getEnv(name);
+  return value.isDefined() ? value.unwrap() : YGUndefined;
+}
+
+void YGConfigCopyEnv(const YGConfigRef dst, const YGConfigConstRef src) {
+  if (dst == nullptr || src == nullptr) {
+    return;
+  }
+  resolveRef(dst)->copyEnvFrom(*resolveRef(src));
 }
 
 void YGConfigSetErrata(YGConfigRef config, YGErrata errata) {

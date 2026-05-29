@@ -38,6 +38,19 @@ YG_EXPORT YGExpressionRef
 YGExpressionDivide(YGExpressionRef a, YGExpressionRef b);
 
 /**
+ * Build a CSS env() expression: env(name) or env(name, fallback).
+ *
+ * `name` is the env variable name (e.g. "safe-area-inset-top"); it is interned
+ * against the node's Config when the expression is set. `fallback` is an
+ * optional fallback expression used when the name is unset on the Config; pass
+ * NULL for no fallback (an unset name with no fallback resolves to undefined,
+ * i.e. the property behaves as unset). Ownership of `fallback` transfers to the
+ * returned expression.
+ */
+YG_EXPORT YGExpressionRef
+YGExpressionEnv(const char* name, YGExpressionRef fallback);
+
+/**
  * Free an expression builder that has NOT been set on a node.
  * Do not call on a NULL pointer. The builder may be freed immediately after
  * setting on a node — the node holds its own copy.
@@ -48,11 +61,11 @@ YG_EXPORT void YGExpressionFree(YGExpressionRef expr);
  * Parse a Yoga math expression string into an expression builder.
  *
  * Supported syntax: unitless numbers (32, 16.5), percentages (50%),
- * min(a,b), max(a,b), clamp(min,val,max), calc(expr), and the four
- * arithmetic operators inside calc(). Whitespace is ignored.
+ * min(a,b), max(a,b), clamp(min,val,max), env(name[, fallback]), calc(expr),
+ * and the four arithmetic operators inside calc(). Whitespace is ignored.
  *
  * Returns NULL if parsing fails, including: CSS unit suffixes (px, em),
- * var(), env(), unknown functions, or invalid syntax.
+ * var(), unknown functions, or invalid syntax.
  *
  * The caller owns the returned expression and must call YGExpressionFree()
  * after setting it on a node.

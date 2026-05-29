@@ -13,6 +13,8 @@
 
 namespace facebook::yoga {
 
+class Config;
+
 /**
  * ExpressionNode represents one node in a CSS math expression tree.
  *
@@ -33,6 +35,7 @@ struct ExpressionNode {
     Value, // concrete unitless value
     Percent, // percentage of referenceLength
     Number, // unitless — used as operand in Multiply/Divide
+    Env, // CSS env() — late-bound, resolved from Config at layout time
     // Binary function nodes
     Min,
     Max,
@@ -91,6 +94,17 @@ struct ExpressionNode {
     n.children = {a, b, kUnusedChild};
     return n;
   }
+  // env(name) / env(name, fallback).
+  // a = interned name id, b = fallback root index (or kUnusedChild if none),
+  // c = kUnusedChild (unused).
+  constexpr static ExpressionNode env(
+      uint16_t nameId,
+      uint16_t fallbackIdx = kUnusedChild) {
+    ExpressionNode n;
+    n.kind = Kind::Env;
+    n.children = {nameId, fallbackIdx, kUnusedChild};
+    return n;
+  }
   constexpr static ExpressionNode
   clamp(uint16_t minIdx, uint16_t valIdx, uint16_t maxIdx) {
     ExpressionNode n;
@@ -133,6 +147,14 @@ struct ExpressionNode {
       case Kind::Percent:
       case Kind::Number:
         return floatValue == other.floatValue;
+      case Kind::Env:
+        // Compare name id (a) and fallback index (b). c is always kUnusedChild.
+        // The name id is per-Config; this comparison is only meaningful within
+        // the same Config (the sole caller, storeExpression's redundant-set
+        // check, always compares within one node's pool). It must remain
+        // non-crashing for cross-config Style equality, which it is.
+        return children.a == other.children.a &&
+            children.b == other.children.b;
       default: // all function nodes use children
         return children.a == other.children.a &&
             children.b == other.children.b && children.c == other.children.c;
@@ -153,6 +175,7 @@ struct ExpressionNode {
 FloatOptional evaluate(
     const std::vector<ExpressionNode>& pool,
     uint16_t rootIndex,
-    float referenceLength);
+    float referenceLength,
+    const Config* config = nullptr);
 
 } // namespace facebook::yoga

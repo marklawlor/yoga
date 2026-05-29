@@ -37,7 +37,7 @@ FlexLine calculateFlexLine(
       resolveDirection(node->style().flexDirection(), direction);
   const bool isNodeFlexWrap = node->style().flexWrap() != Wrap::NoWrap;
   const float gap =
-      node->style().computeGapForAxis(mainAxis, availableInnerMainDim);
+      node->style().computeGapForAxis(mainAxis, availableInnerMainDim, node->getConfig());
 
   const auto childrenEnd = node->getLayoutChildren().end();
   // Add items to the current line until it's full or we run out of items.
@@ -61,7 +61,7 @@ FlexLine calculateFlexLine(
 
     child->setLineIndex(lineCount);
     const float childMarginMainAxis =
-        child->style().computeMarginForAxis(mainAxis, availableInnerWidth);
+        child->style().computeMarginForAxis(mainAxis, availableInnerWidth, child->getConfig());
     const float childLeadingGapMainAxis =
         child == firstElementInLine ? 0.0f : gap;
     const float flexBasisWithMinAndMaxConstraints =

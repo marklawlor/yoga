@@ -74,7 +74,8 @@ class StyleValuePool {
 
   FloatOptional evaluateExpression(
       StyleValueHandle handle,
-      float referenceLength) const;
+      float referenceLength,
+      const Config* config = nullptr) const;
 
   const std::vector<ExpressionNode>& getExpressionNodes(
       StyleValueHandle handle) const;

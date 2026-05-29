@@ -76,6 +76,45 @@ YG_EXPORT void YGConfigSetPointScaleFactor(
 YG_EXPORT float YGConfigGetPointScaleFactor(YGConfigConstRef config);
 
 /**
+ * Sets the value (in points) of a CSS env() variable on this config. env()
+ * values are tree/surface-scoped (the CSS analogue) and resolved at layout
+ * time. Changing a value invalidates cached layout for all nodes under this
+ * config on the next YGNodeCalculateLayout.
+ *
+ * Passing YGUndefined clears the variable (equivalent to YGConfigRemoveEnv).
+ *
+ * Yoga pre-populates the standard `safe-area-inset-top`, `safe-area-inset-right`,
+ * `safe-area-inset-bottom`, and `safe-area-inset-left` variables with a value
+ * of 0; hosts may override or remove them.
+ */
+YG_EXPORT void
+YGConfigSetEnv(YGConfigRef config, const char* name, float value);
+
+/**
+ * Removes (clears the value of) a CSS env() variable on this config. The
+ * variable name remains registered, but resolves as unset (falling back to any
+ * env() fallback expression, else to undefined).
+ */
+YG_EXPORT void YGConfigRemoveEnv(YGConfigRef config, const char* name);
+
+/**
+ * Returns the stored value (in points) of a CSS env() variable on this config,
+ * or YGUndefined if the variable is unset. Does NOT apply any env() fallback.
+ */
+YG_EXPORT float YGConfigGetEnv(YGConfigConstRef config, const char* name);
+
+/**
+ * Copies all CSS env() variable values from `src` onto `dst`, replacing any
+ * values already on `dst`. env() name ids are process-global, so values are
+ * directly portable between configs. Used to carry env values forward when a
+ * config is cloned (e.g. across React Native ShadowTree generations).
+ *
+ * Invalidates cached layout under `dst` on the next YGNodeCalculateLayout only
+ * if the value table actually changed.
+ */
+YG_EXPORT void YGConfigCopyEnv(YGConfigRef dst, YGConfigConstRef src);
+
+/**
  * Configures how Yoga balances W3C conformance vs compatibility with layouts
  * created against earlier versions of Yoga.
  *

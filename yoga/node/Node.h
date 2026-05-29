@@ -89,7 +89,9 @@ class YG_EXPORT Node : public ::YGNode {
    */
   inline bool hasDefiniteLength(Dimension dimension, float ownerSize) {
     auto usedValue = style_.resolveHandle(
-        processedDimensions_[static_cast<size_t>(dimension)], ownerSize);
+        processedDimensions_[static_cast<size_t>(dimension)],
+        ownerSize,
+        config_);
     return usedValue.isDefined() && usedValue.unwrap() >= 0.0f;
   }
 
@@ -192,14 +194,16 @@ class YG_EXPORT Node : public ::YGNode {
       float referenceLength,
       float ownerWidth) const {
     FloatOptional value = style_.resolveHandle(
-        processedDimensions_[yoga::to_underlying(dimension)], referenceLength);
+        processedDimensions_[yoga::to_underlying(dimension)],
+        referenceLength,
+        config_);
     if (style_.boxSizing() == BoxSizing::BorderBox) {
       return value;
     }
 
     FloatOptional dimensionPaddingAndBorder =
         FloatOptional{style_.computePaddingAndBorderForDimension(
-            direction, dimension, ownerWidth)};
+            direction, dimension, ownerWidth, config_)};
 
     return value +
         (dimensionPaddingAndBorder.isDefined() ? dimensionPaddingAndBorder

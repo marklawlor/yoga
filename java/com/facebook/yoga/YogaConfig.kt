@@ -25,6 +25,12 @@ public abstract class YogaConfig {
 
   public abstract fun getLogger(): YogaLogger?
 
+  public abstract fun setEnv(name: String, value: Float)
+
+  public abstract fun removeEnv(name: String)
+
+  public abstract fun getEnv(name: String): Float
+
   protected abstract fun getNativePointer(): Long
 
   public companion object {

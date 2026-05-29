@@ -182,6 +182,48 @@ static void jni_YGConfigSetLoggerJNI(
   }
 }
 
+static void jni_YGConfigSetEnvJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jstring name,
+    jfloat value) {
+  const YGConfigRef config = _jlong2YGConfigRef(nativePointer);
+  const char* nameStr = env->GetStringUTFChars(name, nullptr);
+  if (nameStr != nullptr) {
+    YGConfigSetEnv(config, nameStr, value);
+    env->ReleaseStringUTFChars(name, nameStr);
+  }
+}
+
+static void jni_YGConfigRemoveEnvJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jstring name) {
+  const YGConfigRef config = _jlong2YGConfigRef(nativePointer);
+  const char* nameStr = env->GetStringUTFChars(name, nullptr);
+  if (nameStr != nullptr) {
+    YGConfigRemoveEnv(config, nameStr);
+    env->ReleaseStringUTFChars(name, nameStr);
+  }
+}
+
+static jfloat jni_YGConfigGetEnvJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jstring name) {
+  const YGConfigConstRef config = _jlong2YGConfigRef(nativePointer);
+  const char* nameStr = env->GetStringUTFChars(name, nullptr);
+  jfloat result = YGUndefined;
+  if (nameStr != nullptr) {
+    result = YGConfigGetEnv(config, nameStr);
+    env->ReleaseStringUTFChars(name, nameStr);
+  }
+  return result;
+}
+
 static void
 jni_YGNodeFinalizeJNI(JNIEnv* /*env*/, jobject /*obj*/, jlong nativePointer) {
   if (nativePointer == 0) {
@@ -923,6 +965,15 @@ static JNINativeMethod methods[] = {
     {"jni_YGConfigSetLoggerJNI",
      "(JLcom/facebook/yoga/YogaLogger;)V",
      (void*)jni_YGConfigSetLoggerJNI},
+    {"jni_YGConfigSetEnvJNI",
+     "(JLjava/lang/String;F)V",
+     (void*)jni_YGConfigSetEnvJNI},
+    {"jni_YGConfigRemoveEnvJNI",
+     "(JLjava/lang/String;)V",
+     (void*)jni_YGConfigRemoveEnvJNI},
+    {"jni_YGConfigGetEnvJNI",
+     "(JLjava/lang/String;)F",
+     (void*)jni_YGConfigGetEnvJNI},
     {"jni_YGNodeNewJNI", "()J", (void*)jni_YGNodeNewJNI},
     {"jni_YGNodeNewWithConfigJNI", "(J)J", (void*)jni_YGNodeNewWithConfigJNI},
     {"jni_YGNodeFinalizeJNI", "(J)V", (void*)jni_YGNodeFinalizeJNI},

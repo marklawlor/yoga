@@ -14,6 +14,9 @@
 #include <memory>
 #include <vector>
 
+#include <string>
+
+#include <yoga/config/Config.h>
 #include <yoga/style/StyleExpression.h>
 
 using namespace facebook::yoga;
@@ -24,6 +27,10 @@ struct YGExpression {
   std::unique_ptr<YGExpression> right{};
   std::unique_ptr<YGExpression>
       maxChild{}; // Clamp only — the max (third) operand
+  // env() only — the env variable name. The name is interned to an id against a
+  // Config at serialise time (children.a). `right` (if present) is the fallback
+  // subtree (children.b).
+  std::string envName{};
 
   static std::unique_ptr<YGExpression> leaf(ExpressionNode n) {
     auto e = std::make_unique<YGExpression>();
@@ -37,6 +44,19 @@ static uint16_t flatten(
     std::vector<ExpressionNode>& out) {
   uint16_t idx = static_cast<uint16_t>(out.size());
   out.push_back(expr->node);
+
+  if (expr->node.kind == ExpressionNode::Kind::Env) {
+    // env(): intern the name to a process-global id (children.a). If a fallback
+    // subtree exists it is carried in `right` (children.b); otherwise
+    // kUnusedChild. Interning is global, so no Config is needed here.
+    out[idx].children.a = internEnvName(expr->envName);
+    if (expr->right) {
+      uint16_t fallbackIdx = flatten(expr->right.get(), out);
+      out[idx].children.b = fallbackIdx;
+    }
+    // no fallback: .b retains kUnusedChild from the env factory
+    return idx;
+  }
 
   if (expr->left) {
     assert(expr->right != nullptr);
@@ -116,6 +136,24 @@ YGExpressionRef YGExpressionClamp(
   e->left.reset(min);
   e->right.reset(val);
   e->maxChild.reset(max);
+  return e.release();
+}
+
+YGExpressionRef YGExpressionEnv(const char* name, YGExpressionRef fallback) {
+  if (name == nullptr) {
+    YGExpressionFree(fallback);
+    return nullptr;
+  }
+  auto e = std::make_unique<YGExpression>();
+  // children.a (name id) is filled at serialise time; children.b is the
+  // fallback root index, or kUnusedChild when there is no fallback.
+  e->node = ExpressionNode::env(0, ExpressionNode::kUnusedChild);
+  e->envName = name;
+  // The fallback subtree (if any) is carried in `right`, mirroring the
+  // children.b encoding; flatten() reads it back out for env nodes.
+  if (fallback != nullptr) {
+    e->right.reset(fallback);
+  }
   return e.release();
 }
 
@@ -219,6 +257,38 @@ struct Parser {
     return false;
   }
 
+  // Parse a CSS env() identifier name. First char must be [A-Za-z_-]; the rest
+  // [A-Za-z0-9_-]. Case-sensitive, length-bounded. Returns true and fills
+  // `out` on success; leaves pos unchanged on failure.
+  bool parseIdentifier(std::string& out) {
+    skipWhitespace();
+    const char* start = pos;
+    auto isFirst = [](char c) {
+      return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_' ||
+          c == '-';
+    };
+    auto isRest = [](char c) {
+      return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+          (c >= '0' && c <= '9') || c == '_' || c == '-';
+    };
+    if (pos >= end || !isFirst(*pos)) {
+      return false;
+    }
+    ++pos;
+    while (pos < end && isRest(*pos)) {
+      ++pos;
+    }
+    // Bound identifier length defensively.
+    constexpr size_t kMaxIdentifierLength = 256;
+    size_t len = static_cast<size_t>(pos - start);
+    if (len > kMaxIdentifierLength) {
+      pos = start;
+      return false;
+    }
+    out.assign(start, len);
+    return true;
+  }
+
   // Match a keyword (case-sensitive) at current position (after whitespace).
   bool matchKeyword(const char* kw) {
     skipWhitespace();
@@ -317,7 +387,29 @@ struct Parser {
       }
       return YGExpressionClamp(mn, val, mx);
     }
-    // Reject any other identifier (var, env, rgb, unknown functions, CSS units)
+    // env( IDENT ) or env( IDENT , fallback )
+    if (matchKeyword("env")) {
+      pos += 3;
+      if (!consume('('))
+        return nullptr;
+      std::string name;
+      if (!parseIdentifier(name))
+        return nullptr;
+      skipWhitespace();
+      // Optional fallback after a comma.
+      if (consume(',')) {
+        YGExpressionRef fallback = parseExpr();
+        if (!fallback || !consume(')')) {
+          YGExpressionFree(fallback);
+          return nullptr;
+        }
+        return YGExpressionEnv(name.c_str(), fallback);
+      }
+      if (!consume(')'))
+        return nullptr;
+      return YGExpressionEnv(name.c_str(), nullptr);
+    }
+    // Reject any other identifier (var, rgb, unknown functions, CSS units)
     if (pos < end &&
         ((*pos >= 'a' && *pos <= 'z') || (*pos >= 'A' && *pos <= 'Z'))) {
       return nullptr;
