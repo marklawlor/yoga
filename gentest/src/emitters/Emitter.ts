@@ -122,6 +122,23 @@ export default abstract class Emitter {
   abstract setGap(node: string, gutter: string, value: ValueWithUnit): void;
   abstract setAspectRatio(node: string, value: ValueWithUnit): void;
 
+  // Expression setters
+  abstract setWidthExpression(node: string, expr: string): void;
+  abstract setHeightExpression(node: string, expr: string): void;
+  abstract setMinWidthExpression(node: string, expr: string): void;
+  abstract setMinHeightExpression(node: string, expr: string): void;
+  abstract setMaxWidthExpression(node: string, expr: string): void;
+  abstract setMaxHeightExpression(node: string, expr: string): void;
+  abstract setFlexBasisExpression(node: string, expr: string): void;
+  abstract setMarginExpression(node: string, edge: string, expr: string): void;
+  abstract setPaddingExpression(node: string, edge: string, expr: string): void;
+  abstract setPositionExpression(
+    node: string,
+    edge: string,
+    expr: string,
+  ): void;
+  abstract setGapExpression(node: string, gutter: string, expr: string): void;
+
   /**
    * Generate test code for a complete fixture.
    */

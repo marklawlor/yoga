@@ -785,9 +785,14 @@ static float distributeFreeSpaceSecondPass(
                                availableInnerWidth)
                            .unwrap() +
           marginCross;
+      const auto crossDimHandle =
+          currentLineChild->getProcessedDimensionHandle(dimension(crossAxis));
       const bool isLoosePercentageMeasurement =
-          currentLineChild->getProcessedDimension(dimension(crossAxis))
-              .isPercent() &&
+          (currentLineChild->getProcessedDimension(dimension(crossAxis))
+               .isPercent() ||
+           (crossDimHandle.isExpression() &&
+            currentLineChild->style().expressionContainsPercent(
+                crossDimHandle))) &&
           sizingModeCrossDim != SizingMode::StretchFit;
       childCrossSizingMode =
           yoga::isUndefined(childCrossSize) || isLoosePercentageMeasurement
@@ -1046,7 +1051,7 @@ static void justifyMainAxis(
   // remainingFreeSpace is 0 when min main dimension is not given
   if (sizingModeMainDim == SizingMode::FitContent &&
       flexLine.layout.remainingFreeSpace > 0) {
-    if (style.minDimension(dimension(mainAxis)).isDefined() &&
+    if (style.minDimensionHandle(dimension(mainAxis)).isDefined() &&
         style
             .resolvedMinDimension(
                 direction, dimension(mainAxis), mainAxisOwnerSize, ownerWidth)

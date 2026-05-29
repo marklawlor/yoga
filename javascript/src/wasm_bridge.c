@@ -7,6 +7,7 @@
 
 #include <emscripten/emscripten.h>
 #include <yoga/Yoga.h>
+#include <yoga/YGExpression.h>
 
 // Static buffer for returning YGValue structs to JS.
 // JS reads buf[0] as float (value) and buf[1] as int (unit) via HEAPF32/HEAP32.
@@ -153,3 +154,30 @@ EMSCRIPTEN_KEEPALIVE void jswrap_YGNodeSetDirtiedFunc(YGNodeRef node) {
 EMSCRIPTEN_KEEPALIVE void jswrap_YGNodeUnsetDirtiedFunc(YGNodeRef node) {
   YGNodeSetDirtiedFunc(node, NULL);
 }
+
+// --- Expression API ---
+
+EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionValue(float v) { return YGExpressionValue(v); }
+EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionPercent(float v) { return YGExpressionPercent(v); }
+EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionNumber(float v) { return YGExpressionNumber(v); }
+EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionMin(YGExpressionRef a, YGExpressionRef b) { return YGExpressionMin(a, b); }
+EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionMax(YGExpressionRef a, YGExpressionRef b) { return YGExpressionMax(a, b); }
+EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionAdd(YGExpressionRef a, YGExpressionRef b) { return YGExpressionAdd(a, b); }
+EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionSubtract(YGExpressionRef a, YGExpressionRef b) { return YGExpressionSubtract(a, b); }
+EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionMultiply(YGExpressionRef a, YGExpressionRef b) { return YGExpressionMultiply(a, b); }
+EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionDivide(YGExpressionRef a, YGExpressionRef b) { return YGExpressionDivide(a, b); }
+EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionClamp(YGExpressionRef mn, YGExpressionRef val, YGExpressionRef mx) { return YGExpressionClamp(mn, val, mx); }
+EMSCRIPTEN_KEEPALIVE void jswrap_YGExpressionFree(YGExpressionRef expr) { YGExpressionFree(expr); }
+EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionParse(const char* str) { return YGExpressionParse(str); }
+
+EMSCRIPTEN_KEEPALIVE void jswrap_YGNodeStyleSetWidthExpression(YGNodeRef node, YGExpressionRef expr) { YGNodeStyleSetWidthExpression(node, expr); }
+EMSCRIPTEN_KEEPALIVE void jswrap_YGNodeStyleSetHeightExpression(YGNodeRef node, YGExpressionRef expr) { YGNodeStyleSetHeightExpression(node, expr); }
+EMSCRIPTEN_KEEPALIVE void jswrap_YGNodeStyleSetMinWidthExpression(YGNodeRef node, YGExpressionRef expr) { YGNodeStyleSetMinWidthExpression(node, expr); }
+EMSCRIPTEN_KEEPALIVE void jswrap_YGNodeStyleSetMinHeightExpression(YGNodeRef node, YGExpressionRef expr) { YGNodeStyleSetMinHeightExpression(node, expr); }
+EMSCRIPTEN_KEEPALIVE void jswrap_YGNodeStyleSetMaxWidthExpression(YGNodeRef node, YGExpressionRef expr) { YGNodeStyleSetMaxWidthExpression(node, expr); }
+EMSCRIPTEN_KEEPALIVE void jswrap_YGNodeStyleSetMaxHeightExpression(YGNodeRef node, YGExpressionRef expr) { YGNodeStyleSetMaxHeightExpression(node, expr); }
+EMSCRIPTEN_KEEPALIVE void jswrap_YGNodeStyleSetFlexBasisExpression(YGNodeRef node, YGExpressionRef expr) { YGNodeStyleSetFlexBasisExpression(node, expr); }
+EMSCRIPTEN_KEEPALIVE void jswrap_YGNodeStyleSetMarginExpression(YGNodeRef node, YGEdge edge, YGExpressionRef expr) { YGNodeStyleSetMarginExpression(node, edge, expr); }
+EMSCRIPTEN_KEEPALIVE void jswrap_YGNodeStyleSetPaddingExpression(YGNodeRef node, YGEdge edge, YGExpressionRef expr) { YGNodeStyleSetPaddingExpression(node, edge, expr); }
+EMSCRIPTEN_KEEPALIVE void jswrap_YGNodeStyleSetPositionExpression(YGNodeRef node, YGEdge edge, YGExpressionRef expr) { YGNodeStyleSetPositionExpression(node, edge, expr); }
+EMSCRIPTEN_KEEPALIVE void jswrap_YGNodeStyleSetGapExpression(YGNodeRef node, YGGutter gutter, YGExpressionRef expr) { YGNodeStyleSetGapExpression(node, gutter, expr); }

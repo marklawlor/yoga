@@ -1,0 +1,67 @@
+---
+sidebar_position: 15
+---
+
+import Playground from '@site/src/components/Playground';
+
+# Maths Expressions
+
+Yoga supports maths expressions on any length-accepting style property. Pass an
+expression string as the property value:
+
+```jsx
+<Node style={{ width: "calc(100% - 32)", height: "clamp(100, 25%, 300)" }} />
+```
+
+<Playground code={`<Layout config={{useWebDefaults: false}}>
+  <Node style={{width: 350, height: 350, padding: 10, gap: 8}}>
+    <Node style={{width: "100%", height: 60}} />
+    <Node style={{width: "calc(100% - 40)", height: 60}} />
+    <Node style={{width: "min(80%, 200)", height: 60}} />
+    <Node style={{width: "clamp(80, 50%, 220)", height: 60}} />
+  </Node>
+</Layout>`} />
+
+## Supported functions
+
+| Function               | Example               | Description                 |
+| ---------------------- | --------------------- | --------------------------- |
+| `min(a, b)`            | `min(50%, 200)`       | Smaller of two values       |
+| `max(a, b)`            | `max(100, 20%)`       | Larger of two values        |
+| `clamp(min, val, max)` | `clamp(16, 5%, 48)`   | Value clamped to a range    |
+| `calc(a + b)`          | `calc(100% + 16)`     | Addition                    |
+| `calc(a - b)`          | `calc(100% - 32)`     | Subtraction                 |
+| `calc(a * n)`          | `calc(50% * 2)`       | Multiply by unitless number |
+| `calc(a / n)`          | `calc(100% / 4)`      | Divide by unitless number   |
+
+Expressions may be arbitrarily nested: `calc(min(50%, 200) - 16)` is valid.
+
+Note: Yoga is unitless — use bare numbers (`32`) not CSS units (`32px`).
+
+## Supported properties
+
+Maths expressions work on all length-accepting style properties:
+
+**Dimensions**: `width`, `height`
+
+**Constraints**: `minWidth`, `minHeight`, `maxWidth`, `maxHeight`
+
+**Flex**: `flexBasis`
+
+**Spacing**: `margin` (all edges: `marginTop`, `marginBottom`, `marginLeft`,
+`marginRight`, `marginStart`, `marginEnd`, `marginInline`, `marginBlock`),
+`padding` (same edge pattern)
+
+**Position / insets**: `top`, `bottom`, `left`, `right`, `start`, `end`,
+`insetInline`, `insetBlock`
+
+**Gap**: `gap`, `rowGap`, `columnGap`
+
+## Known limitations
+
+- Keyword operands (`fit-content`, `max-content`, `stretch`) inside
+  expressions are not yet supported.
+- `var()` and `env()` substitution must be performed by the consumer (e.g.
+  React Native) before passing an expression to Yoga.
+- CSS unit suffixes (`px`, `em`, `rem`, etc.) are not supported — Yoga values
+  are unitless.

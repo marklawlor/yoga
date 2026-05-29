@@ -10,6 +10,8 @@
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <yoga/YGExpression.h>
+#include <yoga/debug/Log.h>
 #include "LayoutContext.h"
 #include "YGJNI.h"
 #include "YGJTypesVanilla.h"
@@ -762,6 +764,148 @@ static void jni_YGNodeStyleSetGapPercentJNI(
 // Yoga specific properties, not compatible with flexbox specification
 YG_NODE_JNI_STYLE_PROP(jfloat, float, AspectRatio);
 
+// Parse a JNI string into a YGExpression. On parse failure of a non-empty
+// string, emit a warning rather than silently clearing the property — this
+// mirrors the JavaScript binding, which warns on the same condition. Returns
+// nullptr on failure (which the C setters interpret as "clear the property").
+// Also tolerates a null result from GetStringUTFChars (e.g. under OOM).
+static YGExpressionRef jniParseExpression(JNIEnv* env, jstring expression) {
+  const char* expr = env->GetStringUTFChars(expression, nullptr);
+  YGExpressionRef e = (expr != nullptr) ? YGExpressionParse(expr) : nullptr;
+  if (e == nullptr && expr != nullptr && *expr != '\0') {
+    yoga::log(
+        LogLevel::Warn,
+        "yoga-expression: failed to parse \"%s\"; the property has been "
+        "cleared\n",
+        expr);
+  }
+  if (expr != nullptr) {
+    env->ReleaseStringUTFChars(expression, expr);
+  }
+  return e;
+}
+
+// Expression setter helpers — parse, apply, free
+static void jni_YGNodeStyleSetWidthExpressionJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jstring expression) {
+  YGExpressionRef e = jniParseExpression(env, expression);
+  YGNodeStyleSetWidthExpression(_jlong2YGNodeRef(nativePointer), e);
+  YGExpressionFree(e);
+}
+
+static void jni_YGNodeStyleSetHeightExpressionJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jstring expression) {
+  YGExpressionRef e = jniParseExpression(env, expression);
+  YGNodeStyleSetHeightExpression(_jlong2YGNodeRef(nativePointer), e);
+  YGExpressionFree(e);
+}
+
+static void jni_YGNodeStyleSetMinWidthExpressionJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jstring expression) {
+  YGExpressionRef e = jniParseExpression(env, expression);
+  YGNodeStyleSetMinWidthExpression(_jlong2YGNodeRef(nativePointer), e);
+  YGExpressionFree(e);
+}
+
+static void jni_YGNodeStyleSetMinHeightExpressionJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jstring expression) {
+  YGExpressionRef e = jniParseExpression(env, expression);
+  YGNodeStyleSetMinHeightExpression(_jlong2YGNodeRef(nativePointer), e);
+  YGExpressionFree(e);
+}
+
+static void jni_YGNodeStyleSetMaxWidthExpressionJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jstring expression) {
+  YGExpressionRef e = jniParseExpression(env, expression);
+  YGNodeStyleSetMaxWidthExpression(_jlong2YGNodeRef(nativePointer), e);
+  YGExpressionFree(e);
+}
+
+static void jni_YGNodeStyleSetMaxHeightExpressionJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jstring expression) {
+  YGExpressionRef e = jniParseExpression(env, expression);
+  YGNodeStyleSetMaxHeightExpression(_jlong2YGNodeRef(nativePointer), e);
+  YGExpressionFree(e);
+}
+
+static void jni_YGNodeStyleSetFlexBasisExpressionJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jstring expression) {
+  YGExpressionRef e = jniParseExpression(env, expression);
+  YGNodeStyleSetFlexBasisExpression(_jlong2YGNodeRef(nativePointer), e);
+  YGExpressionFree(e);
+}
+
+static void jni_YGNodeStyleSetMarginExpressionJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jint edge,
+    jstring expression) {
+  YGNodeRef node = _jlong2YGNodeRef(nativePointer);
+  YGNodeEdges{node}.add(YGNodeEdges::MARGIN).setOn(node);
+  YGExpressionRef e = jniParseExpression(env, expression);
+  YGNodeStyleSetMarginExpression(node, static_cast<YGEdge>(edge), e);
+  YGExpressionFree(e);
+}
+
+static void jni_YGNodeStyleSetPaddingExpressionJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jint edge,
+    jstring expression) {
+  YGNodeRef node = _jlong2YGNodeRef(nativePointer);
+  YGNodeEdges{node}.add(YGNodeEdges::PADDING).setOn(node);
+  YGExpressionRef e = jniParseExpression(env, expression);
+  YGNodeStyleSetPaddingExpression(node, static_cast<YGEdge>(edge), e);
+  YGExpressionFree(e);
+}
+
+static void jni_YGNodeStyleSetPositionExpressionJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jint edge,
+    jstring expression) {
+  YGExpressionRef e = jniParseExpression(env, expression);
+  YGNodeStyleSetPositionExpression(
+      _jlong2YGNodeRef(nativePointer), static_cast<YGEdge>(edge), e);
+  YGExpressionFree(e);
+}
+
+static void jni_YGNodeStyleSetGapExpressionJNI(
+    JNIEnv* env,
+    jobject /*obj*/,
+    jlong nativePointer,
+    jint gutter,
+    jstring expression) {
+  YGExpressionRef e = jniParseExpression(env, expression);
+  YGNodeStyleSetGapExpression(
+      _jlong2YGNodeRef(nativePointer), static_cast<YGGutter>(gutter), e);
+  YGExpressionFree(e);
+}
+
 static JNINativeMethod methods[] = {
     {"jni_YGConfigNewJNI", "()J", (void*)jni_YGConfigNewJNI},
     {"jni_YGConfigFreeJNI", "(J)V", (void*)jni_YGConfigFreeJNI},
@@ -1070,6 +1214,39 @@ static JNINativeMethod methods[] = {
      "(JZ)V",
      (void*)jni_YGNodeSetAlwaysFormsContainingBlockJNI},
     {"jni_YGNodeCloneJNI", "(J)J", (void*)jni_YGNodeCloneJNI},
+    {"jni_YGNodeStyleSetWidthExpressionJNI",
+     "(JLjava/lang/String;)V",
+     (void*)jni_YGNodeStyleSetWidthExpressionJNI},
+    {"jni_YGNodeStyleSetHeightExpressionJNI",
+     "(JLjava/lang/String;)V",
+     (void*)jni_YGNodeStyleSetHeightExpressionJNI},
+    {"jni_YGNodeStyleSetMinWidthExpressionJNI",
+     "(JLjava/lang/String;)V",
+     (void*)jni_YGNodeStyleSetMinWidthExpressionJNI},
+    {"jni_YGNodeStyleSetMinHeightExpressionJNI",
+     "(JLjava/lang/String;)V",
+     (void*)jni_YGNodeStyleSetMinHeightExpressionJNI},
+    {"jni_YGNodeStyleSetMaxWidthExpressionJNI",
+     "(JLjava/lang/String;)V",
+     (void*)jni_YGNodeStyleSetMaxWidthExpressionJNI},
+    {"jni_YGNodeStyleSetMaxHeightExpressionJNI",
+     "(JLjava/lang/String;)V",
+     (void*)jni_YGNodeStyleSetMaxHeightExpressionJNI},
+    {"jni_YGNodeStyleSetFlexBasisExpressionJNI",
+     "(JLjava/lang/String;)V",
+     (void*)jni_YGNodeStyleSetFlexBasisExpressionJNI},
+    {"jni_YGNodeStyleSetMarginExpressionJNI",
+     "(JILjava/lang/String;)V",
+     (void*)jni_YGNodeStyleSetMarginExpressionJNI},
+    {"jni_YGNodeStyleSetPaddingExpressionJNI",
+     "(JILjava/lang/String;)V",
+     (void*)jni_YGNodeStyleSetPaddingExpressionJNI},
+    {"jni_YGNodeStyleSetPositionExpressionJNI",
+     "(JILjava/lang/String;)V",
+     (void*)jni_YGNodeStyleSetPositionExpressionJNI},
+    {"jni_YGNodeStyleSetGapExpressionJNI",
+     "(JILjava/lang/String;)V",
+     (void*)jni_YGNodeStyleSetGapExpressionJNI},
 };
 
 void YGJNIVanilla::registerNatives(JNIEnv* env) {

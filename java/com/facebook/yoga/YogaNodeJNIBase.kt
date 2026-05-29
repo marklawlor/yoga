@@ -697,6 +697,50 @@ public abstract class YogaNodeJNIBase : YogaNode, Cloneable {
     YogaNative.jni_YGNodeStyleSetGapPercentJNI(nativePointer, gutter.intValue(), gapLength)
   }
 
+  override fun setWidthExpression(expression: String) {
+    YogaNative.jni_YGNodeStyleSetWidthExpressionJNI(nativePointer, expression)
+  }
+
+  override fun setHeightExpression(expression: String) {
+    YogaNative.jni_YGNodeStyleSetHeightExpressionJNI(nativePointer, expression)
+  }
+
+  override fun setMinWidthExpression(expression: String) {
+    YogaNative.jni_YGNodeStyleSetMinWidthExpressionJNI(nativePointer, expression)
+  }
+
+  override fun setMinHeightExpression(expression: String) {
+    YogaNative.jni_YGNodeStyleSetMinHeightExpressionJNI(nativePointer, expression)
+  }
+
+  override fun setMaxWidthExpression(expression: String) {
+    YogaNative.jni_YGNodeStyleSetMaxWidthExpressionJNI(nativePointer, expression)
+  }
+
+  override fun setMaxHeightExpression(expression: String) {
+    YogaNative.jni_YGNodeStyleSetMaxHeightExpressionJNI(nativePointer, expression)
+  }
+
+  override fun setFlexBasisExpression(expression: String) {
+    YogaNative.jni_YGNodeStyleSetFlexBasisExpressionJNI(nativePointer, expression)
+  }
+
+  override fun setMarginExpression(edge: YogaEdge, expression: String) {
+    YogaNative.jni_YGNodeStyleSetMarginExpressionJNI(nativePointer, edge.intValue(), expression)
+  }
+
+  override fun setPaddingExpression(edge: YogaEdge, expression: String) {
+    YogaNative.jni_YGNodeStyleSetPaddingExpressionJNI(nativePointer, edge.intValue(), expression)
+  }
+
+  override fun setPositionExpression(edge: YogaEdge, expression: String) {
+    YogaNative.jni_YGNodeStyleSetPositionExpressionJNI(nativePointer, edge.intValue(), expression)
+  }
+
+  override fun setGapExpression(gutter: YogaGutter, expression: String) {
+    YogaNative.jni_YGNodeStyleSetGapExpressionJNI(nativePointer, gutter.intValue(), expression)
+  }
+
   public companion object {
     private const val MARGIN: Int = 1
     private const val PADDING: Int = 2

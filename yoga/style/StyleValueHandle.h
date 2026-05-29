@@ -57,6 +57,10 @@ class StyleValueHandle {
     return type() == Type::Point;
   }
 
+  constexpr bool isExpression() const {
+    return type() == Type::Expression;
+  }
+
  private:
   friend class StyleValuePool;
 
@@ -70,8 +74,13 @@ class StyleValueHandle {
     Percent,
     Number,
     Auto,
-    Keyword
+    Keyword,
+    Expression, // slot index into StyleValuePool::expressionSlots_; root at [slot][0]
   };
+
+  static_assert(
+      static_cast<uint8_t>(Type::Expression) < 8,
+      "StyleValueHandle::Type must fit in 3-bit kHandleTypeMask");
 
   // Intentionally leaving out auto as a fast path
   enum class Keyword : uint8_t { MaxContent, FitContent, Stretch };

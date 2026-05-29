@@ -88,7 +88,8 @@ class YG_EXPORT Node : public ::YGNode {
    * https://www.w3.org/TR/css-sizing-3/#definite
    */
   inline bool hasDefiniteLength(Dimension dimension, float ownerSize) {
-    auto usedValue = getProcessedDimension(dimension).resolve(ownerSize);
+    auto usedValue = style_.resolveHandle(
+        processedDimensions_[static_cast<size_t>(dimension)], ownerSize);
     return usedValue.isDefined() && usedValue.unwrap() >= 0.0f;
   }
 
@@ -176,8 +177,13 @@ class YG_EXPORT Node : public ::YGNode {
     return isDirty_;
   }
 
-  Style::SizeLength getProcessedDimension(Dimension dimension) const {
+  StyleValueHandle getProcessedDimensionHandle(Dimension dimension) const {
     return processedDimensions_[static_cast<size_t>(dimension)];
+  }
+
+  Style::SizeLength getProcessedDimension(Dimension dimension) const {
+    return style_.pool().getSize(
+        processedDimensions_[static_cast<size_t>(dimension)]);
   }
 
   FloatOptional getResolvedDimension(
@@ -185,8 +191,8 @@ class YG_EXPORT Node : public ::YGNode {
       Dimension dimension,
       float referenceLength,
       float ownerWidth) const {
-    FloatOptional value =
-        getProcessedDimension(dimension).resolve(referenceLength);
+    FloatOptional value = style_.resolveHandle(
+        processedDimensions_[yoga::to_underlying(dimension)], referenceLength);
     if (style_.boxSizing() == BoxSizing::BorderBox) {
       return value;
     }
@@ -324,8 +330,7 @@ class YG_EXPORT Node : public ::YGNode {
   Node* owner_ = nullptr;
   std::vector<Node*> children_;
   const Config* config_;
-  std::array<Style::SizeLength, 2> processedDimensions_{
-      {StyleSizeLength::undefined(), StyleSizeLength::undefined()}};
+  std::array<StyleValueHandle, 2> processedDimensions_{};
 };
 
 inline Node* resolveRef(const YGNodeRef ref) {

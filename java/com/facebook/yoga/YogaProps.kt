@@ -180,4 +180,28 @@ public interface YogaProps {
   public fun getPosition(edge: YogaEdge): YogaValue
 
   public fun getBorder(edge: YogaEdge): Float
+
+  /* Expression properties */
+
+  public fun setWidthExpression(expression: String)
+
+  public fun setHeightExpression(expression: String)
+
+  public fun setMinWidthExpression(expression: String)
+
+  public fun setMinHeightExpression(expression: String)
+
+  public fun setMaxWidthExpression(expression: String)
+
+  public fun setMaxHeightExpression(expression: String)
+
+  public fun setFlexBasisExpression(expression: String)
+
+  public fun setMarginExpression(edge: YogaEdge, expression: String)
+
+  public fun setPaddingExpression(edge: YogaEdge, expression: String)
+
+  public fun setPositionExpression(edge: YogaEdge, expression: String)
+
+  public fun setGapExpression(gutter: YogaGutter, expression: String)
 }

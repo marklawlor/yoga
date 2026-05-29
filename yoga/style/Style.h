@@ -31,6 +31,7 @@
 #include <yoga/numeric/FloatOptional.h>
 #include <yoga/style/GridLine.h>
 #include <yoga/style/GridTrack.h>
+#include <yoga/style/StyleExpression.h>
 #include <yoga/style/StyleLength.h>
 #include <yoga/style/StyleSizeLength.h>
 #include <yoga/style/StyleValuePool.h>
@@ -642,6 +643,95 @@ class YG_EXPORT Style {
     return computeMargin(inlineEndEdge(axis, direction), direction).isAuto();
   }
 
+  FloatOptional resolveHandle(StyleValueHandle handle, float referenceLength)
+      const {
+    return resolve(handle, referenceLength);
+  }
+
+  const StyleValuePool& pool() const {
+    return pool_;
+  }
+  StyleValuePool& pool() {
+    return pool_;
+  }
+
+  StyleValueHandle dimensionHandle(Dimension axis) const {
+    return dimensions_[yoga::to_underlying(axis)];
+  }
+  StyleValueHandle minDimensionHandle(Dimension axis) const {
+    return minDimensions_[yoga::to_underlying(axis)];
+  }
+  StyleValueHandle maxDimensionHandle(Dimension axis) const {
+    return maxDimensions_[yoga::to_underlying(axis)];
+  }
+  StyleValueHandle flexBasisHandle() const {
+    return flexBasis_;
+  }
+
+  bool setDimensionExpression(Dimension dim, std::vector<ExpressionNode> nodes) {
+    return storeExpression(
+        dimensions_[yoga::to_underlying(dim)], std::move(nodes));
+  }
+  bool setMinDimensionExpression(
+      Dimension dim,
+      std::vector<ExpressionNode> nodes) {
+    return storeExpression(
+        minDimensions_[yoga::to_underlying(dim)], std::move(nodes));
+  }
+  bool setMaxDimensionExpression(
+      Dimension dim,
+      std::vector<ExpressionNode> nodes) {
+    return storeExpression(
+        maxDimensions_[yoga::to_underlying(dim)], std::move(nodes));
+  }
+  bool setMarginExpression(Edge edge, std::vector<ExpressionNode> nodes) {
+    return storeExpression(
+        margin_[yoga::to_underlying(edge)], std::move(nodes));
+  }
+  bool setPaddingExpression(Edge edge, std::vector<ExpressionNode> nodes) {
+    return storeExpression(
+        padding_[yoga::to_underlying(edge)], std::move(nodes));
+  }
+  bool setPositionExpression(Edge edge, std::vector<ExpressionNode> nodes) {
+    return storeExpression(
+        position_[yoga::to_underlying(edge)], std::move(nodes));
+  }
+  bool setGapExpression(Gutter gutter, std::vector<ExpressionNode> nodes) {
+    return storeExpression(gap_[yoga::to_underlying(gutter)], std::move(nodes));
+  }
+  bool setFlexBasisExpression(std::vector<ExpressionNode> nodes) {
+    return storeExpression(flexBasis_, std::move(nodes));
+  }
+
+  bool expressionContainsPercent(StyleValueHandle handle) const {
+    return pool_.expressionContainsPercent(handle);
+  }
+
+  bool clearDimensionExpression(Dimension dim) {
+    return pool_.clearExpressionSize(dimensions_[yoga::to_underlying(dim)]);
+  }
+  bool clearMinDimensionExpression(Dimension dim) {
+    return pool_.clearExpressionSize(minDimensions_[yoga::to_underlying(dim)]);
+  }
+  bool clearMaxDimensionExpression(Dimension dim) {
+    return pool_.clearExpressionSize(maxDimensions_[yoga::to_underlying(dim)]);
+  }
+  bool clearFlexBasisExpression() {
+    return pool_.clearExpressionSize(flexBasis_);
+  }
+  bool clearMarginExpression(Edge edge) {
+    return pool_.clearExpression(margin_[yoga::to_underlying(edge)]);
+  }
+  bool clearPaddingExpression(Edge edge) {
+    return pool_.clearExpression(padding_[yoga::to_underlying(edge)]);
+  }
+  bool clearPositionExpression(Edge edge) {
+    return pool_.clearExpression(position_[yoga::to_underlying(edge)]);
+  }
+  bool clearGapExpression(Gutter gutter) {
+    return pool_.clearExpression(gap_[yoga::to_underlying(gutter)]);
+  }
+
   bool operator==(const Style& other) const {
     return direction_ == other.direction_ &&
         flexDirection_ == other.flexDirection_ &&
@@ -682,6 +772,17 @@ class YG_EXPORT Style {
   using Edges = std::array<StyleValueHandle, ordinalCount<Edge>()>;
   using Gutters = std::array<StyleValueHandle, ordinalCount<Gutter>()>;
 
+  bool storeExpression(
+      StyleValueHandle& handle,
+      std::vector<ExpressionNode> nodes) {
+    if (handle.isExpression() &&
+        pool_.getExpressionNodes(handle) == nodes) {
+      return false;
+    }
+    pool_.store(handle, std::move(nodes));
+    return true;
+  }
+
   static inline bool numbersEqual(
       const StyleValueHandle& lhsHandle,
       const StyleValuePool& lhsPool,
@@ -696,6 +797,13 @@ class YG_EXPORT Style {
       const StyleValuePool& lhsPool,
       const StyleValueHandle& rhsHandle,
       const StyleValuePool& rhsPool) {
+    if (lhsHandle.isExpression() || rhsHandle.isExpression()) {
+      if (!lhsHandle.isExpression() || !rhsHandle.isExpression()) {
+        return false;
+      }
+      return lhsPool.getExpressionNodes(lhsHandle) ==
+          rhsPool.getExpressionNodes(rhsHandle);
+    }
     return (lhsHandle.isUndefined() && rhsHandle.isUndefined()) ||
         (lhsPool.getLength(lhsHandle) == rhsPool.getLength(rhsHandle));
   }
@@ -721,6 +829,13 @@ class YG_EXPORT Style {
       const StyleValuePool& lhsPool,
       const StyleValueHandle& rhsHandle,
       const StyleValuePool& rhsPool) {
+    if (lhsHandle.isExpression() || rhsHandle.isExpression()) {
+      if (!lhsHandle.isExpression() || !rhsHandle.isExpression()) {
+        return false;
+      }
+      return lhsPool.getExpressionNodes(lhsHandle) ==
+          rhsPool.getExpressionNodes(rhsHandle);
+    }
     return (lhsHandle.isUndefined() && rhsHandle.isUndefined()) ||
         (lhsPool.getSize(lhsHandle) == rhsPool.getSize(rhsHandle));
   }
@@ -893,6 +1008,9 @@ class YG_EXPORT Style {
     if (handle.isPercent()) {
       return FloatOptional{
           pool_.getStoredValue(handle) * referenceLength * 0.01f};
+    }
+    if (handle.isExpression()) {
+      return pool_.evaluateExpression(handle, referenceLength);
     }
     return FloatOptional{};
   }

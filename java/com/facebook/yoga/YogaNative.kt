@@ -328,4 +328,68 @@ public object YogaNative {
       nativePointer: Long,
       alwaysFormContainingBlock: Boolean,
   )
+
+  @JvmStatic
+  public external fun jni_YGNodeStyleSetWidthExpressionJNI(nativePointer: Long, expression: String)
+
+  @JvmStatic
+  public external fun jni_YGNodeStyleSetHeightExpressionJNI(nativePointer: Long, expression: String)
+
+  @JvmStatic
+  public external fun jni_YGNodeStyleSetMinWidthExpressionJNI(
+      nativePointer: Long,
+      expression: String,
+  )
+
+  @JvmStatic
+  public external fun jni_YGNodeStyleSetMinHeightExpressionJNI(
+      nativePointer: Long,
+      expression: String,
+  )
+
+  @JvmStatic
+  public external fun jni_YGNodeStyleSetMaxWidthExpressionJNI(
+      nativePointer: Long,
+      expression: String,
+  )
+
+  @JvmStatic
+  public external fun jni_YGNodeStyleSetMaxHeightExpressionJNI(
+      nativePointer: Long,
+      expression: String,
+  )
+
+  @JvmStatic
+  public external fun jni_YGNodeStyleSetFlexBasisExpressionJNI(
+      nativePointer: Long,
+      expression: String,
+  )
+
+  @JvmStatic
+  public external fun jni_YGNodeStyleSetMarginExpressionJNI(
+      nativePointer: Long,
+      edge: Int,
+      expression: String,
+  )
+
+  @JvmStatic
+  public external fun jni_YGNodeStyleSetPaddingExpressionJNI(
+      nativePointer: Long,
+      edge: Int,
+      expression: String,
+  )
+
+  @JvmStatic
+  public external fun jni_YGNodeStyleSetPositionExpressionJNI(
+      nativePointer: Long,
+      edge: Int,
+      expression: String,
+  )
+
+  @JvmStatic
+  public external fun jni_YGNodeStyleSetGapExpressionJNI(
+      nativePointer: Long,
+      gutter: Int,
+      expression: String,
+  )
 }
