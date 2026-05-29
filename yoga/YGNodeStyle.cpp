@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <yoga/YGExpression.h>
+#include <yoga/YGExpressionInternal.h>
 #include <yoga/Yoga.h>
 #include <yoga/debug/AssertFatal.h>
 #include <yoga/node/Node.h>
@@ -771,4 +773,158 @@ void YGNodeStyleSetGridAutoRowMinMax(
           styleSizeLengthFromTypeAndValue(minType, minValue),
           styleSizeLengthFromTypeAndValue(maxType, maxValue)));
   resolveRef(node)->markDirtyAndPropagate();
+}
+
+void YGNodeStyleSetWidthExpression(YGNodeRef node, YGExpressionRef expr) {
+  auto* n = resolveRef(node);
+  if (expr == nullptr) {
+    if (n->style().clearDimensionExpression(Dimension::Width))
+      n->markDirtyAndPropagate();
+    return;
+  }
+  if (n->style().setDimensionExpression(
+          Dimension::Width, YGExpressionSerialise(expr))) {
+    n->markDirtyAndPropagate();
+  }
+}
+
+void YGNodeStyleSetHeightExpression(YGNodeRef node, YGExpressionRef expr) {
+  auto* n = resolveRef(node);
+  if (expr == nullptr) {
+    if (n->style().clearDimensionExpression(Dimension::Height))
+      n->markDirtyAndPropagate();
+    return;
+  }
+  if (n->style().setDimensionExpression(
+          Dimension::Height, YGExpressionSerialise(expr))) {
+    n->markDirtyAndPropagate();
+  }
+}
+
+void YGNodeStyleSetMinWidthExpression(YGNodeRef node, YGExpressionRef expr) {
+  auto* n = resolveRef(node);
+  if (expr == nullptr) {
+    if (n->style().clearMinDimensionExpression(Dimension::Width))
+      n->markDirtyAndPropagate();
+    return;
+  }
+  if (n->style().setMinDimensionExpression(
+          Dimension::Width, YGExpressionSerialise(expr))) {
+    n->markDirtyAndPropagate();
+  }
+}
+
+void YGNodeStyleSetMinHeightExpression(YGNodeRef node, YGExpressionRef expr) {
+  auto* n = resolveRef(node);
+  if (expr == nullptr) {
+    if (n->style().clearMinDimensionExpression(Dimension::Height))
+      n->markDirtyAndPropagate();
+    return;
+  }
+  if (n->style().setMinDimensionExpression(
+          Dimension::Height, YGExpressionSerialise(expr))) {
+    n->markDirtyAndPropagate();
+  }
+}
+
+void YGNodeStyleSetMaxWidthExpression(YGNodeRef node, YGExpressionRef expr) {
+  auto* n = resolveRef(node);
+  if (expr == nullptr) {
+    if (n->style().clearMaxDimensionExpression(Dimension::Width))
+      n->markDirtyAndPropagate();
+    return;
+  }
+  if (n->style().setMaxDimensionExpression(
+          Dimension::Width, YGExpressionSerialise(expr))) {
+    n->markDirtyAndPropagate();
+  }
+}
+
+void YGNodeStyleSetMaxHeightExpression(YGNodeRef node, YGExpressionRef expr) {
+  auto* n = resolveRef(node);
+  if (expr == nullptr) {
+    if (n->style().clearMaxDimensionExpression(Dimension::Height))
+      n->markDirtyAndPropagate();
+    return;
+  }
+  if (n->style().setMaxDimensionExpression(
+          Dimension::Height, YGExpressionSerialise(expr))) {
+    n->markDirtyAndPropagate();
+  }
+}
+
+void YGNodeStyleSetFlexBasisExpression(YGNodeRef node, YGExpressionRef expr) {
+  auto* n = resolveRef(node);
+  if (expr == nullptr) {
+    if (n->style().clearFlexBasisExpression())
+      n->markDirtyAndPropagate();
+    return;
+  }
+  if (n->style().setFlexBasisExpression(YGExpressionSerialise(expr))) {
+    n->markDirtyAndPropagate();
+  }
+}
+
+void YGNodeStyleSetMarginExpression(
+    YGNodeRef node,
+    YGEdge edge,
+    YGExpressionRef expr) {
+  auto* n = resolveRef(node);
+  if (expr == nullptr) {
+    if (n->style().clearMarginExpression(scopedEnum(edge)))
+      n->markDirtyAndPropagate();
+    return;
+  }
+  if (n->style().setMarginExpression(
+          scopedEnum(edge), YGExpressionSerialise(expr))) {
+    n->markDirtyAndPropagate();
+  }
+}
+
+void YGNodeStyleSetPaddingExpression(
+    YGNodeRef node,
+    YGEdge edge,
+    YGExpressionRef expr) {
+  auto* n = resolveRef(node);
+  if (expr == nullptr) {
+    if (n->style().clearPaddingExpression(scopedEnum(edge)))
+      n->markDirtyAndPropagate();
+    return;
+  }
+  if (n->style().setPaddingExpression(
+          scopedEnum(edge), YGExpressionSerialise(expr))) {
+    n->markDirtyAndPropagate();
+  }
+}
+
+void YGNodeStyleSetPositionExpression(
+    YGNodeRef node,
+    YGEdge edge,
+    YGExpressionRef expr) {
+  auto* n = resolveRef(node);
+  if (expr == nullptr) {
+    if (n->style().clearPositionExpression(scopedEnum(edge)))
+      n->markDirtyAndPropagate();
+    return;
+  }
+  if (n->style().setPositionExpression(
+          scopedEnum(edge), YGExpressionSerialise(expr))) {
+    n->markDirtyAndPropagate();
+  }
+}
+
+void YGNodeStyleSetGapExpression(
+    YGNodeRef node,
+    YGGutter gutter,
+    YGExpressionRef expr) {
+  auto* n = resolveRef(node);
+  if (expr == nullptr) {
+    if (n->style().clearGapExpression(scopedEnum(gutter)))
+      n->markDirtyAndPropagate();
+    return;
+  }
+  if (n->style().setGapExpression(
+          scopedEnum(gutter), YGExpressionSerialise(expr))) {
+    n->markDirtyAndPropagate();
+  }
 }

@@ -56,8 +56,21 @@ function valueWithUnitToString(value: ValueWithUnit): string {
 }
 
 export class CppEmitter extends Emitter {
+  private hasExpressions = false;
+
   constructor() {
     super('  ');
+  }
+
+  override getOutput(): string {
+    const output = this.lines.join('\n');
+    if (this.hasExpressions) {
+      return output.replace(
+        '#include <yoga/Yoga.h>',
+        '#include <yoga/Yoga.h>\n#include <yoga/YGExpression.h>',
+      );
+    }
+    return output;
   }
 
   emitCommentHeader(fixtureName: string): void {
@@ -448,5 +461,104 @@ export class CppEmitter extends Emitter {
   setAspectRatio(node: string, value: ValueWithUnit): void {
     const v = valueWithUnitToString(value);
     this.push('YGNodeStyleSetAspectRatio(' + node + ', ' + v + ');');
+  }
+
+  private emitExpressionSetter(
+    node: string,
+    setter: string,
+    expr: string,
+  ): void {
+    this.hasExpressions = true;
+    this.push('{');
+    this.pushIndent();
+    this.push(
+      `YGExpressionRef expr = YGExpressionParse(${JSON.stringify(expr)});`,
+    );
+    this.push(`${setter}(${node}, expr);`);
+    this.push('YGExpressionFree(expr);');
+    this.popIndent();
+    this.push('}');
+  }
+
+  private emitEdgeExpressionSetter(
+    node: string,
+    setter: string,
+    edge: string,
+    expr: string,
+  ): void {
+    this.hasExpressions = true;
+    this.push('{');
+    this.pushIndent();
+    this.push(
+      `YGExpressionRef expr = YGExpressionParse(${JSON.stringify(expr)});`,
+    );
+    this.push(`${setter}(${node}, ${edge}, expr);`);
+    this.push('YGExpressionFree(expr);');
+    this.popIndent();
+    this.push('}');
+  }
+
+  setWidthExpression(node: string, expr: string): void {
+    this.emitExpressionSetter(node, 'YGNodeStyleSetWidthExpression', expr);
+  }
+
+  setHeightExpression(node: string, expr: string): void {
+    this.emitExpressionSetter(node, 'YGNodeStyleSetHeightExpression', expr);
+  }
+
+  setMinWidthExpression(node: string, expr: string): void {
+    this.emitExpressionSetter(node, 'YGNodeStyleSetMinWidthExpression', expr);
+  }
+
+  setMinHeightExpression(node: string, expr: string): void {
+    this.emitExpressionSetter(node, 'YGNodeStyleSetMinHeightExpression', expr);
+  }
+
+  setMaxWidthExpression(node: string, expr: string): void {
+    this.emitExpressionSetter(node, 'YGNodeStyleSetMaxWidthExpression', expr);
+  }
+
+  setMaxHeightExpression(node: string, expr: string): void {
+    this.emitExpressionSetter(node, 'YGNodeStyleSetMaxHeightExpression', expr);
+  }
+
+  setFlexBasisExpression(node: string, expr: string): void {
+    this.emitExpressionSetter(node, 'YGNodeStyleSetFlexBasisExpression', expr);
+  }
+
+  setMarginExpression(node: string, edge: string, expr: string): void {
+    this.emitEdgeExpressionSetter(
+      node,
+      'YGNodeStyleSetMarginExpression',
+      edge,
+      expr,
+    );
+  }
+
+  setPaddingExpression(node: string, edge: string, expr: string): void {
+    this.emitEdgeExpressionSetter(
+      node,
+      'YGNodeStyleSetPaddingExpression',
+      edge,
+      expr,
+    );
+  }
+
+  setPositionExpression(node: string, edge: string, expr: string): void {
+    this.emitEdgeExpressionSetter(
+      node,
+      'YGNodeStyleSetPositionExpression',
+      edge,
+      expr,
+    );
+  }
+
+  setGapExpression(node: string, gutter: string, expr: string): void {
+    this.emitEdgeExpressionSetter(
+      node,
+      'YGNodeStyleSetGapExpression',
+      gutter,
+      expr,
+    );
   }
 }

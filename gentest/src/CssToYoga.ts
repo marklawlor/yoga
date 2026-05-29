@@ -12,6 +12,35 @@ import type {ParsedStyles, ValueWithUnit} from './types.ts';
 
 const INVISIBLE_BORDER_STYLES = new Set(['none', 'initial']);
 
+function isMathExpression(value: string): boolean {
+  const t = value.trimStart().toLowerCase();
+  return (
+    t.startsWith('calc(') ||
+    t.startsWith('min(') ||
+    t.startsWith('max(') ||
+    t.startsWith('clamp(')
+  );
+}
+
+function normalizeMathExpression(value: string): string {
+  // Yoga math expressions are unitless (points). px is the only length unit the
+  // native parser understands, so strip it (case-insensitively, including
+  // leading-dot decimals like `.5px`). Any other unit (em, rem, vh, vw, …)
+  // cannot be resolved statically and would make the native parser reject the
+  // whole expression at runtime, silently clearing the property — so the
+  // generated test would assert against an unconstrained node. Fail loudly here
+  // instead so a bad fixture cannot produce a misleading passing test.
+  const stripped = value.replace(/(\d*\.?\d+)px\b/gi, '$1');
+  const badUnit = stripped.match(/\d*\.?\d+\s*([a-zA-Z]+)/);
+  if (badUnit != null) {
+    throw new Error(
+      `Unsupported unit "${badUnit[1]}" in math expression "${value}". ` +
+        'Yoga math expressions are unitless (points); only px and % are supported.',
+    );
+  }
+  return stripped;
+}
+
 /**
  * Parse a raw inline style attribute string into a Map of property → value.
  * Expands common shorthands used in fixtures so individual longhand
@@ -173,8 +202,15 @@ export function applyStyles(
         break;
 
       case 'flex-basis': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) emitter.setFlexBasis(nodeName, parsed);
+        if (isMathExpression(value)) {
+          emitter.setFlexBasisExpression(
+            nodeName,
+            normalizeMathExpression(value),
+          );
+        } else {
+          const parsed = parseCssLength(value);
+          if (parsed != null) emitter.setFlexBasis(nodeName, parsed);
+        }
         break;
       }
 
@@ -184,96 +220,184 @@ export function applyStyles(
 
       // Dimensions
       case 'width': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) emitter.setWidth(nodeName, parsed);
+        if (isMathExpression(value)) {
+          emitter.setWidthExpression(nodeName, normalizeMathExpression(value));
+        } else {
+          const parsed = parseCssLength(value);
+          if (parsed != null) emitter.setWidth(nodeName, parsed);
+        }
         break;
       }
       case 'height': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) emitter.setHeight(nodeName, parsed);
+        if (isMathExpression(value)) {
+          emitter.setHeightExpression(nodeName, normalizeMathExpression(value));
+        } else {
+          const parsed = parseCssLength(value);
+          if (parsed != null) emitter.setHeight(nodeName, parsed);
+        }
         break;
       }
       case 'min-width': {
-        if (value !== '0' && value !== '0px' && value !== 'auto') {
+        if (isMathExpression(value)) {
+          emitter.setMinWidthExpression(
+            nodeName,
+            normalizeMathExpression(value),
+          );
+        } else if (value !== '0' && value !== '0px' && value !== 'auto') {
           const parsed = parseCssLength(value);
           if (parsed != null) emitter.setMinWidth(nodeName, parsed);
         }
         break;
       }
       case 'min-height': {
-        if (value !== '0' && value !== '0px' && value !== 'auto') {
+        if (isMathExpression(value)) {
+          emitter.setMinHeightExpression(
+            nodeName,
+            normalizeMathExpression(value),
+          );
+        } else if (value !== '0' && value !== '0px' && value !== 'auto') {
           const parsed = parseCssLength(value);
           if (parsed != null) emitter.setMinHeight(nodeName, parsed);
         }
         break;
       }
       case 'max-width': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) emitter.setMaxWidth(nodeName, parsed);
+        if (isMathExpression(value)) {
+          emitter.setMaxWidthExpression(
+            nodeName,
+            normalizeMathExpression(value),
+          );
+        } else {
+          const parsed = parseCssLength(value);
+          if (parsed != null) emitter.setMaxWidth(nodeName, parsed);
+        }
         break;
       }
       case 'max-height': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) emitter.setMaxHeight(nodeName, parsed);
+        if (isMathExpression(value)) {
+          emitter.setMaxHeightExpression(
+            nodeName,
+            normalizeMathExpression(value),
+          );
+        } else {
+          const parsed = parseCssLength(value);
+          if (parsed != null) emitter.setMaxHeight(nodeName, parsed);
+        }
         break;
       }
 
       // Insets - physical
       case 'left': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPosition(nodeName, edgeValue('left'), parsed);
+        if (isMathExpression(value)) {
+          emitter.setPositionExpression(
+            nodeName,
+            edgeValue('left'),
+            normalizeMathExpression(value),
+          );
+        } else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPosition(nodeName, edgeValue('left'), parsed);
         }
         break;
       }
       case 'top': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPosition(nodeName, edgeValue('top'), parsed);
+        if (isMathExpression(value)) {
+          emitter.setPositionExpression(
+            nodeName,
+            edgeValue('top'),
+            normalizeMathExpression(value),
+          );
+        } else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPosition(nodeName, edgeValue('top'), parsed);
         }
         break;
       }
       case 'right': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPosition(nodeName, edgeValue('right'), parsed);
+        if (isMathExpression(value)) {
+          emitter.setPositionExpression(
+            nodeName,
+            edgeValue('right'),
+            normalizeMathExpression(value),
+          );
+        } else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPosition(nodeName, edgeValue('right'), parsed);
         }
         break;
       }
       case 'bottom': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPosition(nodeName, edgeValue('bottom'), parsed);
+        if (isMathExpression(value)) {
+          emitter.setPositionExpression(
+            nodeName,
+            edgeValue('bottom'),
+            normalizeMathExpression(value),
+          );
+        } else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPosition(nodeName, edgeValue('bottom'), parsed);
         }
         break;
       }
 
       // Insets - logical
       case 'inset-inline-start': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPosition(nodeName, edgeValue('start'), parsed);
+        if (isMathExpression(value)) {
+          emitter.setPositionExpression(
+            nodeName,
+            edgeValue('start'),
+            normalizeMathExpression(value),
+          );
+        } else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPosition(nodeName, edgeValue('start'), parsed);
         }
         break;
       }
       case 'inset-inline-end': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPosition(nodeName, edgeValue('end'), parsed);
+        if (isMathExpression(value)) {
+          emitter.setPositionExpression(
+            nodeName,
+            edgeValue('end'),
+            normalizeMathExpression(value),
+          );
+        } else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPosition(nodeName, edgeValue('end'), parsed);
         }
         break;
       }
       case 'inset-block-start': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPosition(nodeName, edgeValue('top'), parsed);
+        if (isMathExpression(value)) {
+          emitter.setPositionExpression(
+            nodeName,
+            edgeValue('top'),
+            normalizeMathExpression(value),
+          );
+        } else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPosition(nodeName, edgeValue('top'), parsed);
         }
         break;
       }
       case 'inset-block-end': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPosition(nodeName, edgeValue('bottom'), parsed);
+        if (isMathExpression(value)) {
+          emitter.setPositionExpression(
+            nodeName,
+            edgeValue('bottom'),
+            normalizeMathExpression(value),
+          );
+        } else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPosition(nodeName, edgeValue('bottom'), parsed);
         }
         break;
       }
@@ -282,6 +406,13 @@ export function applyStyles(
       case 'margin':
       case 'padding':
       case 'border-width': {
+        if (prop !== 'border-width' && isMathExpression(value)) {
+          const expr = normalizeMathExpression(value);
+          if (prop === 'margin')
+            emitter.setMarginExpression(nodeName, edgeValue('all'), expr);
+          else emitter.setPaddingExpression(nodeName, edgeValue('all'), expr);
+          break;
+        }
         const parse =
           prop === 'border-width' ? parseBorderWidth : parseCssLength;
         const emit = (edge: string, v: ValueWithUnit) => {
@@ -349,6 +480,14 @@ export function applyStyles(
 
       // Gap shorthand
       case 'gap': {
+        if (isMathExpression(value)) {
+          emitter.setGapExpression(
+            nodeName,
+            gutterValue('all'),
+            normalizeMathExpression(value),
+          );
+          break;
+        }
         const parts = value.split(/\s+/);
         if (parts.length === 1) {
           const parsed = parseCssLength(parts[0]);
@@ -410,106 +549,204 @@ export function applyStyles(
 
       // Margins - physical
       case 'margin-left': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setMargin(nodeName, edgeValue('left'), parsed);
+        if (isMathExpression(value))
+          emitter.setMarginExpression(
+            nodeName,
+            edgeValue('left'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setMargin(nodeName, edgeValue('left'), parsed);
         }
         break;
       }
       case 'margin-top': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setMargin(nodeName, edgeValue('top'), parsed);
+        if (isMathExpression(value))
+          emitter.setMarginExpression(
+            nodeName,
+            edgeValue('top'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setMargin(nodeName, edgeValue('top'), parsed);
         }
         break;
       }
       case 'margin-right': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setMargin(nodeName, edgeValue('right'), parsed);
+        if (isMathExpression(value))
+          emitter.setMarginExpression(
+            nodeName,
+            edgeValue('right'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setMargin(nodeName, edgeValue('right'), parsed);
         }
         break;
       }
       case 'margin-bottom': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setMargin(nodeName, edgeValue('bottom'), parsed);
+        if (isMathExpression(value))
+          emitter.setMarginExpression(
+            nodeName,
+            edgeValue('bottom'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setMargin(nodeName, edgeValue('bottom'), parsed);
         }
         break;
       }
 
       // Margins - logical
       case 'margin-inline-start': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setMargin(nodeName, edgeValue('start'), parsed);
+        if (isMathExpression(value))
+          emitter.setMarginExpression(
+            nodeName,
+            edgeValue('start'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setMargin(nodeName, edgeValue('start'), parsed);
         }
         break;
       }
       case 'margin-inline-end': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setMargin(nodeName, edgeValue('end'), parsed);
+        if (isMathExpression(value))
+          emitter.setMarginExpression(
+            nodeName,
+            edgeValue('end'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setMargin(nodeName, edgeValue('end'), parsed);
         }
         break;
       }
       case 'margin-block-start': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setMargin(nodeName, edgeValue('top'), parsed);
+        if (isMathExpression(value))
+          emitter.setMarginExpression(
+            nodeName,
+            edgeValue('top'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setMargin(nodeName, edgeValue('top'), parsed);
         }
         break;
       }
       case 'margin-block-end': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setMargin(nodeName, edgeValue('bottom'), parsed);
+        if (isMathExpression(value))
+          emitter.setMarginExpression(
+            nodeName,
+            edgeValue('bottom'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setMargin(nodeName, edgeValue('bottom'), parsed);
         }
         break;
       }
 
       // Padding - physical
       case 'padding-left': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPadding(nodeName, edgeValue('left'), parsed);
+        if (isMathExpression(value))
+          emitter.setPaddingExpression(
+            nodeName,
+            edgeValue('left'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPadding(nodeName, edgeValue('left'), parsed);
         }
         break;
       }
       case 'padding-top': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPadding(nodeName, edgeValue('top'), parsed);
+        if (isMathExpression(value))
+          emitter.setPaddingExpression(
+            nodeName,
+            edgeValue('top'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPadding(nodeName, edgeValue('top'), parsed);
         }
         break;
       }
       case 'padding-right': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPadding(nodeName, edgeValue('right'), parsed);
+        if (isMathExpression(value))
+          emitter.setPaddingExpression(
+            nodeName,
+            edgeValue('right'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPadding(nodeName, edgeValue('right'), parsed);
         }
         break;
       }
       case 'padding-bottom': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPadding(nodeName, edgeValue('bottom'), parsed);
+        if (isMathExpression(value))
+          emitter.setPaddingExpression(
+            nodeName,
+            edgeValue('bottom'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPadding(nodeName, edgeValue('bottom'), parsed);
         }
         break;
       }
 
       // Padding - logical
       case 'padding-inline-start': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPadding(nodeName, edgeValue('start'), parsed);
+        if (isMathExpression(value))
+          emitter.setPaddingExpression(
+            nodeName,
+            edgeValue('start'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPadding(nodeName, edgeValue('start'), parsed);
         }
         break;
       }
       case 'padding-inline-end': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPadding(nodeName, edgeValue('end'), parsed);
+        if (isMathExpression(value))
+          emitter.setPaddingExpression(
+            nodeName,
+            edgeValue('end'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPadding(nodeName, edgeValue('end'), parsed);
         }
         break;
       }
@@ -552,16 +789,30 @@ export function applyStyles(
         break;
       }
       case 'padding-block-start': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPadding(nodeName, edgeValue('top'), parsed);
+        if (isMathExpression(value))
+          emitter.setPaddingExpression(
+            nodeName,
+            edgeValue('top'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPadding(nodeName, edgeValue('top'), parsed);
         }
         break;
       }
       case 'padding-block-end': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setPadding(nodeName, edgeValue('bottom'), parsed);
+        if (isMathExpression(value))
+          emitter.setPaddingExpression(
+            nodeName,
+            edgeValue('bottom'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setPadding(nodeName, edgeValue('bottom'), parsed);
         }
         break;
       }
@@ -731,16 +982,30 @@ export function applyStyles(
 
       // Gap
       case 'row-gap': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setGap(nodeName, gutterValue('row'), parsed);
+        if (isMathExpression(value))
+          emitter.setGapExpression(
+            nodeName,
+            gutterValue('row'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setGap(nodeName, gutterValue('row'), parsed);
         }
         break;
       }
       case 'column-gap': {
-        const parsed = parseCssLength(value);
-        if (parsed != null) {
-          emitter.setGap(nodeName, gutterValue('column'), parsed);
+        if (isMathExpression(value))
+          emitter.setGapExpression(
+            nodeName,
+            gutterValue('column'),
+            normalizeMathExpression(value),
+          );
+        else {
+          const parsed = parseCssLength(value);
+          if (parsed != null)
+            emitter.setGap(nodeName, gutterValue('column'), parsed);
         }
         break;
       }

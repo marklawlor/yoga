@@ -60,55 +60,64 @@ export type FlexStyle = {
   borderWidth?: number;
   borderInlineWidth?: number;
   borderBlockWidth?: number;
-  bottom?: number | `${number}%`;
+  bottom?: number | `${number}%` | string;
   boxSizing?: 'border-box' | 'content-box';
   direction?: 'ltr' | 'rtl';
   display?: 'none' | 'flex' | 'contents';
-  end?: number | `${number}%`;
+  end?: number | `${number}%` | string;
   flex?: number;
-  flexBasis?: number | 'auto' | `${number}%`;
+  flexBasis?: number | 'auto' | `${number}%` | string;
   flexDirection?: 'row' | 'column' | 'row-reverse' | 'column-reverse';
-  rowGap?: number;
-  gap?: number;
-  columnGap?: number;
+  rowGap?: number | `${number}%` | string;
+  gap?: number | `${number}%` | string;
+  columnGap?: number | `${number}%` | string;
   flexGrow?: number;
   flexShrink?: number;
   flexWrap?: 'wrap' | 'nowrap' | 'wrap-reverse';
-  height?: number | 'auto' | `${number}%`;
+  height?: number | 'auto' | `${number}%` | string;
   justifyContent?: JustifyContent;
-  left?: number | `${number}%`;
-  margin?: number | 'auto' | `${number}%`;
-  marginBottom?: number | 'auto' | `${number}%`;
-  marginEnd?: number | 'auto' | `${number}%`;
-  marginLeft?: number | 'auto' | `${number}%`;
-  marginRight?: number | 'auto' | `${number}%`;
-  marginStart?: number | 'auto' | `${number}%`;
-  marginTop?: number | 'auto' | `${number}%`;
-  marginInline?: number | 'auto' | `${number}%`;
-  marginBlock?: number | 'auto' | `${number}%`;
-  maxHeight?: number | `${number}%`;
-  maxWidth?: number | `${number}%`;
-  minHeight?: number | `${number}%`;
-  minWidth?: number | `${number}%`;
+  left?: number | `${number}%` | string;
+  margin?: number | 'auto' | `${number}%` | string;
+  marginBottom?: number | 'auto' | `${number}%` | string;
+  marginEnd?: number | 'auto' | `${number}%` | string;
+  marginLeft?: number | 'auto' | `${number}%` | string;
+  marginRight?: number | 'auto' | `${number}%` | string;
+  marginStart?: number | 'auto' | `${number}%` | string;
+  marginTop?: number | 'auto' | `${number}%` | string;
+  marginInline?: number | 'auto' | `${number}%` | string;
+  marginBlock?: number | 'auto' | `${number}%` | string;
+  maxHeight?: number | `${number}%` | string;
+  maxWidth?: number | `${number}%` | string;
+  minHeight?: number | `${number}%` | string;
+  minWidth?: number | `${number}%` | string;
   overflow?: 'visible' | 'hidden' | 'scroll';
-  padding?: number | `${number}%`;
-  paddingBottom?: number | `${number}%`;
-  paddingEnd?: number | `${number}%`;
-  paddingLeft?: number | `${number}%`;
-  paddingRight?: number | `${number}%`;
-  paddingStart?: number | `${number}%`;
-  paddingTop?: number | `${number}%`;
-  paddingInline?: number | `${number}%`;
-  paddingBlock?: number | `${number}%`;
+  padding?: number | `${number}%` | string;
+  paddingBottom?: number | `${number}%` | string;
+  paddingEnd?: number | `${number}%` | string;
+  paddingLeft?: number | `${number}%` | string;
+  paddingRight?: number | `${number}%` | string;
+  paddingStart?: number | `${number}%` | string;
+  paddingTop?: number | `${number}%` | string;
+  paddingInline?: number | `${number}%` | string;
+  paddingBlock?: number | `${number}%` | string;
   position?: 'absolute' | 'relative' | 'static';
-  right?: number | `${number}%`;
-  start?: number | `${number}%`;
-  top?: number | `${number}%`;
-  insetInline?: number | `${number}%`;
-  insetBlock?: number | `${number}%`;
-  inset?: number | `${number}%`;
-  width?: number | 'auto' | `${number}%`;
+  right?: number | `${number}%` | string;
+  start?: number | `${number}%` | string;
+  top?: number | `${number}%` | string;
+  insetInline?: number | `${number}%` | string;
+  insetBlock?: number | `${number}%` | string;
+  inset?: number | `${number}%` | string;
+  width?: number | 'auto' | `${number}%` | string;
 };
+
+function isCssMathExpression(value: string): boolean {
+  return (
+    value.startsWith('calc(') ||
+    value.startsWith('min(') ||
+    value.startsWith('max(') ||
+    value.startsWith('clamp(')
+  );
+}
 
 export function applyStyle(node: YogaNode, style: FlexStyle = {}): void {
   for (const key of Object.keys(style)) {
@@ -154,7 +163,17 @@ export function applyStyle(node: YogaNode, style: FlexStyle = {}): void {
           node.setBorder(Edge.Vertical, style.borderBlockWidth);
           break;
         case 'bottom':
-          node.setPosition(Edge.Bottom, style.bottom);
+          if (
+            typeof style.bottom === 'string' &&
+            isCssMathExpression(style.bottom)
+          ) {
+            node.setPositionExpression(Edge.Bottom, style.bottom);
+          } else {
+            node.setPosition(
+              Edge.Bottom,
+              style.bottom as number | `${number}%`,
+            );
+          }
           break;
         case 'boxSizing':
           node.setBoxSizing(boxSizing(style.boxSizing));
@@ -166,25 +185,56 @@ export function applyStyle(node: YogaNode, style: FlexStyle = {}): void {
           node.setDisplay(display(style.display));
           break;
         case 'end':
-          node.setPosition(Edge.End, style.end);
+          if (typeof style.end === 'string' && isCssMathExpression(style.end)) {
+            node.setPositionExpression(Edge.End, style.end);
+          } else {
+            node.setPosition(Edge.End, style.end as number | `${number}%`);
+          }
           break;
         case 'flex':
           node.setFlex(style.flex);
           break;
         case 'flexBasis':
-          node.setFlexBasis(style.flexBasis);
+          if (
+            typeof style.flexBasis === 'string' &&
+            isCssMathExpression(style.flexBasis)
+          ) {
+            node.setFlexBasisExpression(style.flexBasis);
+          } else {
+            node.setFlexBasis(
+              style.flexBasis as number | 'auto' | `${number}%`,
+            );
+          }
           break;
         case 'flexDirection':
           node.setFlexDirection(flexDirection(style.flexDirection));
           break;
         case 'rowGap':
-          node.setGap(Gutter.Row, style.rowGap);
+          if (
+            typeof style.rowGap === 'string' &&
+            isCssMathExpression(style.rowGap)
+          ) {
+            node.setGapExpression(Gutter.Row, style.rowGap);
+          } else {
+            node.setGap(Gutter.Row, style.rowGap as number);
+          }
           break;
         case 'gap':
-          node.setGap(Gutter.All, style.gap);
+          if (typeof style.gap === 'string' && isCssMathExpression(style.gap)) {
+            node.setGapExpression(Gutter.All, style.gap);
+          } else {
+            node.setGap(Gutter.All, style.gap as number);
+          }
           break;
         case 'columnGap':
-          node.setGap(Gutter.Column, style.columnGap);
+          if (
+            typeof style.columnGap === 'string' &&
+            isCssMathExpression(style.columnGap)
+          ) {
+            node.setGapExpression(Gutter.Column, style.columnGap);
+          } else {
+            node.setGap(Gutter.Column, style.columnGap as number);
+          }
           break;
         case 'flexGrow':
           node.setFlexGrow(style.flexGrow);
@@ -196,106 +246,377 @@ export function applyStyle(node: YogaNode, style: FlexStyle = {}): void {
           node.setFlexWrap(flexWrap(style.flexWrap));
           break;
         case 'height':
-          node.setHeight(style.height);
+          if (
+            typeof style.height === 'string' &&
+            isCssMathExpression(style.height)
+          ) {
+            node.setHeightExpression(style.height);
+          } else {
+            node.setHeight(style.height as number | 'auto' | `${number}%`);
+          }
           break;
         case 'justifyContent':
           node.setJustifyContent(justifyContent(style.justifyContent));
           break;
         case 'left':
-          node.setPosition(Edge.Left, style.left);
+          if (
+            typeof style.left === 'string' &&
+            isCssMathExpression(style.left)
+          ) {
+            node.setPositionExpression(Edge.Left, style.left);
+          } else {
+            node.setPosition(Edge.Left, style.left as number | `${number}%`);
+          }
           break;
         case 'margin':
-          node.setMargin(Edge.All, style.margin);
+          if (
+            typeof style.margin === 'string' &&
+            isCssMathExpression(style.margin)
+          ) {
+            node.setMarginExpression(Edge.All, style.margin);
+          } else {
+            node.setMargin(
+              Edge.All,
+              style.margin as number | 'auto' | `${number}%`,
+            );
+          }
           break;
         case 'marginBottom':
-          node.setMargin(Edge.Bottom, style.marginBottom);
+          if (
+            typeof style.marginBottom === 'string' &&
+            isCssMathExpression(style.marginBottom)
+          ) {
+            node.setMarginExpression(Edge.Bottom, style.marginBottom);
+          } else {
+            node.setMargin(
+              Edge.Bottom,
+              style.marginBottom as number | 'auto' | `${number}%`,
+            );
+          }
           break;
         case 'marginEnd':
-          node.setMargin(Edge.End, style.marginEnd);
+          if (
+            typeof style.marginEnd === 'string' &&
+            isCssMathExpression(style.marginEnd)
+          ) {
+            node.setMarginExpression(Edge.End, style.marginEnd);
+          } else {
+            node.setMargin(
+              Edge.End,
+              style.marginEnd as number | 'auto' | `${number}%`,
+            );
+          }
           break;
         case 'marginLeft':
-          node.setMargin(Edge.Left, style.marginLeft);
+          if (
+            typeof style.marginLeft === 'string' &&
+            isCssMathExpression(style.marginLeft)
+          ) {
+            node.setMarginExpression(Edge.Left, style.marginLeft);
+          } else {
+            node.setMargin(
+              Edge.Left,
+              style.marginLeft as number | 'auto' | `${number}%`,
+            );
+          }
           break;
         case 'marginRight':
-          node.setMargin(Edge.Right, style.marginRight);
+          if (
+            typeof style.marginRight === 'string' &&
+            isCssMathExpression(style.marginRight)
+          ) {
+            node.setMarginExpression(Edge.Right, style.marginRight);
+          } else {
+            node.setMargin(
+              Edge.Right,
+              style.marginRight as number | 'auto' | `${number}%`,
+            );
+          }
           break;
         case 'marginStart':
-          node.setMargin(Edge.Start, style.marginStart);
+          if (
+            typeof style.marginStart === 'string' &&
+            isCssMathExpression(style.marginStart)
+          ) {
+            node.setMarginExpression(Edge.Start, style.marginStart);
+          } else {
+            node.setMargin(
+              Edge.Start,
+              style.marginStart as number | 'auto' | `${number}%`,
+            );
+          }
           break;
         case 'marginTop':
-          node.setMargin(Edge.Top, style.marginTop);
+          if (
+            typeof style.marginTop === 'string' &&
+            isCssMathExpression(style.marginTop)
+          ) {
+            node.setMarginExpression(Edge.Top, style.marginTop);
+          } else {
+            node.setMargin(
+              Edge.Top,
+              style.marginTop as number | 'auto' | `${number}%`,
+            );
+          }
           break;
         case 'marginInline':
-          node.setMargin(Edge.Horizontal, style.marginInline);
+          if (
+            typeof style.marginInline === 'string' &&
+            isCssMathExpression(style.marginInline)
+          ) {
+            node.setMarginExpression(Edge.Horizontal, style.marginInline);
+          } else {
+            node.setMargin(
+              Edge.Horizontal,
+              style.marginInline as number | 'auto' | `${number}%`,
+            );
+          }
           break;
         case 'marginBlock':
-          node.setMargin(Edge.Vertical, style.marginBlock);
+          if (
+            typeof style.marginBlock === 'string' &&
+            isCssMathExpression(style.marginBlock)
+          ) {
+            node.setMarginExpression(Edge.Vertical, style.marginBlock);
+          } else {
+            node.setMargin(
+              Edge.Vertical,
+              style.marginBlock as number | 'auto' | `${number}%`,
+            );
+          }
           break;
         case 'maxHeight':
-          node.setMaxHeight(style.maxHeight);
+          if (
+            typeof style.maxHeight === 'string' &&
+            isCssMathExpression(style.maxHeight)
+          ) {
+            node.setMaxHeightExpression(style.maxHeight);
+          } else {
+            node.setMaxHeight(style.maxHeight as number | `${number}%`);
+          }
           break;
         case 'maxWidth':
-          node.setMaxWidth(style.maxWidth);
+          if (
+            typeof style.maxWidth === 'string' &&
+            isCssMathExpression(style.maxWidth)
+          ) {
+            node.setMaxWidthExpression(style.maxWidth);
+          } else {
+            node.setMaxWidth(style.maxWidth as number | `${number}%`);
+          }
           break;
         case 'minHeight':
-          node.setMinHeight(style.minHeight);
+          if (
+            typeof style.minHeight === 'string' &&
+            isCssMathExpression(style.minHeight)
+          ) {
+            node.setMinHeightExpression(style.minHeight);
+          } else {
+            node.setMinHeight(style.minHeight as number | `${number}%`);
+          }
           break;
         case 'minWidth':
-          node.setMinWidth(style.minWidth);
+          if (
+            typeof style.minWidth === 'string' &&
+            isCssMathExpression(style.minWidth)
+          ) {
+            node.setMinWidthExpression(style.minWidth);
+          } else {
+            node.setMinWidth(style.minWidth as number | `${number}%`);
+          }
           break;
         case 'overflow':
           node.setOverflow(overflow(style.overflow));
           break;
         case 'padding':
-          node.setPadding(Edge.All, style.padding);
+          if (
+            typeof style.padding === 'string' &&
+            isCssMathExpression(style.padding)
+          ) {
+            node.setPaddingExpression(Edge.All, style.padding);
+          } else {
+            node.setPadding(Edge.All, style.padding as number | `${number}%`);
+          }
           break;
         case 'paddingBottom':
-          node.setPadding(Edge.Bottom, style.paddingBottom);
+          if (
+            typeof style.paddingBottom === 'string' &&
+            isCssMathExpression(style.paddingBottom)
+          ) {
+            node.setPaddingExpression(Edge.Bottom, style.paddingBottom);
+          } else {
+            node.setPadding(
+              Edge.Bottom,
+              style.paddingBottom as number | `${number}%`,
+            );
+          }
           break;
         case 'paddingEnd':
-          node.setPadding(Edge.End, style.paddingEnd);
+          if (
+            typeof style.paddingEnd === 'string' &&
+            isCssMathExpression(style.paddingEnd)
+          ) {
+            node.setPaddingExpression(Edge.End, style.paddingEnd);
+          } else {
+            node.setPadding(
+              Edge.End,
+              style.paddingEnd as number | `${number}%`,
+            );
+          }
           break;
         case 'paddingLeft':
-          node.setPadding(Edge.Left, style.paddingLeft);
+          if (
+            typeof style.paddingLeft === 'string' &&
+            isCssMathExpression(style.paddingLeft)
+          ) {
+            node.setPaddingExpression(Edge.Left, style.paddingLeft);
+          } else {
+            node.setPadding(
+              Edge.Left,
+              style.paddingLeft as number | `${number}%`,
+            );
+          }
           break;
         case 'paddingRight':
-          node.setPadding(Edge.Right, style.paddingRight);
+          if (
+            typeof style.paddingRight === 'string' &&
+            isCssMathExpression(style.paddingRight)
+          ) {
+            node.setPaddingExpression(Edge.Right, style.paddingRight);
+          } else {
+            node.setPadding(
+              Edge.Right,
+              style.paddingRight as number | `${number}%`,
+            );
+          }
           break;
         case 'paddingStart':
-          node.setPadding(Edge.Start, style.paddingStart);
+          if (
+            typeof style.paddingStart === 'string' &&
+            isCssMathExpression(style.paddingStart)
+          ) {
+            node.setPaddingExpression(Edge.Start, style.paddingStart);
+          } else {
+            node.setPadding(
+              Edge.Start,
+              style.paddingStart as number | `${number}%`,
+            );
+          }
           break;
         case 'paddingTop':
-          node.setPadding(Edge.Top, style.paddingTop);
+          if (
+            typeof style.paddingTop === 'string' &&
+            isCssMathExpression(style.paddingTop)
+          ) {
+            node.setPaddingExpression(Edge.Top, style.paddingTop);
+          } else {
+            node.setPadding(
+              Edge.Top,
+              style.paddingTop as number | `${number}%`,
+            );
+          }
           break;
         case 'paddingInline':
-          node.setPadding(Edge.Horizontal, style.paddingInline);
+          if (
+            typeof style.paddingInline === 'string' &&
+            isCssMathExpression(style.paddingInline)
+          ) {
+            node.setPaddingExpression(Edge.Horizontal, style.paddingInline);
+          } else {
+            node.setPadding(
+              Edge.Horizontal,
+              style.paddingInline as number | `${number}%`,
+            );
+          }
           break;
         case 'paddingBlock':
-          node.setPadding(Edge.Vertical, style.paddingBlock);
+          if (
+            typeof style.paddingBlock === 'string' &&
+            isCssMathExpression(style.paddingBlock)
+          ) {
+            node.setPaddingExpression(Edge.Vertical, style.paddingBlock);
+          } else {
+            node.setPadding(
+              Edge.Vertical,
+              style.paddingBlock as number | `${number}%`,
+            );
+          }
           break;
         case 'position':
           node.setPositionType(position(style.position));
           break;
         case 'right':
-          node.setPosition(Edge.Right, style.right);
+          if (
+            typeof style.right === 'string' &&
+            isCssMathExpression(style.right)
+          ) {
+            node.setPositionExpression(Edge.Right, style.right);
+          } else {
+            node.setPosition(Edge.Right, style.right as number | `${number}%`);
+          }
           break;
         case 'start':
-          node.setPosition(Edge.Start, style.start);
+          if (
+            typeof style.start === 'string' &&
+            isCssMathExpression(style.start)
+          ) {
+            node.setPositionExpression(Edge.Start, style.start);
+          } else {
+            node.setPosition(Edge.Start, style.start as number | `${number}%`);
+          }
           break;
         case 'top':
-          node.setPosition(Edge.Top, style.top);
+          if (typeof style.top === 'string' && isCssMathExpression(style.top)) {
+            node.setPositionExpression(Edge.Top, style.top);
+          } else {
+            node.setPosition(Edge.Top, style.top as number | `${number}%`);
+          }
           break;
         case 'insetInline':
-          node.setPosition(Edge.Horizontal, style.insetInline);
+          if (
+            typeof style.insetInline === 'string' &&
+            isCssMathExpression(style.insetInline)
+          ) {
+            node.setPositionExpression(Edge.Horizontal, style.insetInline);
+          } else {
+            node.setPosition(
+              Edge.Horizontal,
+              style.insetInline as number | `${number}%`,
+            );
+          }
           break;
         case 'insetBlock':
-          node.setPosition(Edge.Vertical, style.insetBlock);
+          if (
+            typeof style.insetBlock === 'string' &&
+            isCssMathExpression(style.insetBlock)
+          ) {
+            node.setPositionExpression(Edge.Vertical, style.insetBlock);
+          } else {
+            node.setPosition(
+              Edge.Vertical,
+              style.insetBlock as number | `${number}%`,
+            );
+          }
           break;
         case 'inset':
-          node.setPosition(Edge.All, style.inset);
+          if (
+            typeof style.inset === 'string' &&
+            isCssMathExpression(style.inset)
+          ) {
+            node.setPositionExpression(Edge.All, style.inset);
+          } else {
+            node.setPosition(Edge.All, style.inset as number | `${number}%`);
+          }
           break;
         case 'width':
-          node.setWidth(style.width);
+          if (
+            typeof style.width === 'string' &&
+            isCssMathExpression(style.width)
+          ) {
+            node.setWidthExpression(style.width);
+          } else {
+            node.setWidth(style.width as number | 'auto' | `${number}%`);
+          }
           break;
       }
     } catch (e) {

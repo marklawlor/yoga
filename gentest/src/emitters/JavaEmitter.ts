@@ -466,4 +466,60 @@ export class JavaEmitter extends Emitter {
     const v = valueWithUnitToString(value);
     this.push(node + '.setAspectRatio(' + v + 'f);');
   }
+
+  setWidthExpression(node: string, expr: string): void {
+    this.push(`${node}.setWidthExpression(${JSON.stringify(expr)});`);
+  }
+
+  setHeightExpression(node: string, expr: string): void {
+    this.push(`${node}.setHeightExpression(${JSON.stringify(expr)});`);
+  }
+
+  setMinWidthExpression(node: string, expr: string): void {
+    this.push(`${node}.setMinWidthExpression(${JSON.stringify(expr)});`);
+  }
+
+  setMinHeightExpression(node: string, expr: string): void {
+    this.push(`${node}.setMinHeightExpression(${JSON.stringify(expr)});`);
+  }
+
+  setMaxWidthExpression(node: string, expr: string): void {
+    this.push(`${node}.setMaxWidthExpression(${JSON.stringify(expr)});`);
+  }
+
+  setMaxHeightExpression(node: string, expr: string): void {
+    this.push(`${node}.setMaxHeightExpression(${JSON.stringify(expr)});`);
+  }
+
+  setFlexBasisExpression(node: string, expr: string): void {
+    this.push(`${node}.setFlexBasisExpression(${JSON.stringify(expr)});`);
+  }
+
+  setMarginExpression(node: string, edge: string, expr: string): void {
+    this.push(
+      `${node}.setMarginExpression(${this.tr(edge)}, ${JSON.stringify(expr)});`,
+    );
+  }
+
+  setPaddingExpression(node: string, edge: string, expr: string): void {
+    this.push(
+      `${node}.setPaddingExpression(${this.tr(edge)}, ${JSON.stringify(
+        expr,
+      )});`,
+    );
+  }
+
+  setPositionExpression(node: string, edge: string, expr: string): void {
+    this.push(
+      `${node}.setPositionExpression(${this.tr(edge)}, ${JSON.stringify(
+        expr,
+      )});`,
+    );
+  }
+
+  setGapExpression(node: string, gutter: string, expr: string): void {
+    this.push(
+      `${node}.setGapExpression(${this.tr(gutter)}, ${JSON.stringify(expr)});`,
+    );
+  }
 }

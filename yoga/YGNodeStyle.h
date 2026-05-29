@@ -9,6 +9,7 @@
 
 #include <stddef.h>
 #include <yoga/YGEnums.h>
+#include <yoga/YGExpression.h>
 #include <yoga/YGNode.h>
 #include <yoga/YGValue.h>
 
@@ -239,5 +240,43 @@ YG_EXPORT void YGNodeStyleSetGridAutoRowMinMax(
     float minValue,
     YGGridTrackType maxType,
     float maxValue);
+
+YG_EXPORT void YGNodeStyleSetWidthExpression(
+    YGNodeRef node,
+    YGExpressionRef expr);
+YG_EXPORT void YGNodeStyleSetHeightExpression(
+    YGNodeRef node,
+    YGExpressionRef expr);
+YG_EXPORT void YGNodeStyleSetMinWidthExpression(
+    YGNodeRef node,
+    YGExpressionRef expr);
+YG_EXPORT void YGNodeStyleSetMinHeightExpression(
+    YGNodeRef node,
+    YGExpressionRef expr);
+YG_EXPORT void YGNodeStyleSetMaxWidthExpression(
+    YGNodeRef node,
+    YGExpressionRef expr);
+YG_EXPORT void YGNodeStyleSetMaxHeightExpression(
+    YGNodeRef node,
+    YGExpressionRef expr);
+YG_EXPORT void YGNodeStyleSetFlexBasisExpression(
+    YGNodeRef node,
+    YGExpressionRef expr);
+YG_EXPORT void YGNodeStyleSetMarginExpression(
+    YGNodeRef node,
+    YGEdge edge,
+    YGExpressionRef expr);
+YG_EXPORT void YGNodeStyleSetPaddingExpression(
+    YGNodeRef node,
+    YGEdge edge,
+    YGExpressionRef expr);
+YG_EXPORT void YGNodeStyleSetPositionExpression(
+    YGNodeRef node,
+    YGEdge edge,
+    YGExpressionRef expr);
+YG_EXPORT void YGNodeStyleSetGapExpression(
+    YGNodeRef node,
+    YGGutter gutter,
+    YGExpressionRef expr);
 
 YG_EXTERN_C_END

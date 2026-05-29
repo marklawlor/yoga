@@ -1,0 +1,59 @@
+<div id="calc_100_percent_minus_32px" style="width: 375px; height: 100px">
+  <div id="child" style="width: calc(100% - 32px); height: 50px"></div>
+</div>
+
+<div id="min_50_percent_200px" style="width: 300px; height: 100px">
+  <div id="child" style="width: min(50%, 200px); height: 50px"></div>
+</div>
+
+<div id="min_50_percent_200px_point_wins" style="width: 500px; height: 100px">
+  <div id="child" style="width: min(50%, 200px); height: 50px"></div>
+</div>
+
+<div id="max_50_percent_100px" style="width: 300px; height: 100px">
+  <div id="child" style="width: max(50%, 100px); height: 50px"></div>
+</div>
+
+<div id="clamp_16px_5pct_48px" style="width: 200px; height: 100px">
+  <div id="child" style="width: clamp(16px, 5%, 48px); height: 50px"></div>
+</div>
+
+<div id="clamp_val_in_range" style="width: 200px; height: 100px">
+  <div id="child" style="width: clamp(16px, 50%, 200px); height: 50px"></div>
+</div>
+
+<div id="calc_add" style="width: 200px; height: 100px">
+  <div id="child" style="width: calc(50% + 16px); height: 50px"></div>
+</div>
+
+<div id="calc_multiply" style="width: 200px; height: 100px">
+  <div id="child" style="width: calc(25% * 2); height: 50px"></div>
+</div>
+
+<div id="calc_nested_min_minus" style="width: 300px; height: 100px">
+  <div id="child" style="width: calc(min(50%, 200px) - 16px); height: 50px"></div>
+</div>
+
+<div id="expression_margin" style="width: 200px; height: 100px">
+  <div id="child" style="width: 100%; margin-left: calc(5% + 8px); height: 50px"></div>
+</div>
+
+<div id="expression_padding" style="width: 200px; height: 100px">
+  <div id="child" style="width: 100px; height: 100px; padding-left: calc(5% + 8px)"></div>
+</div>
+
+<div id="expression_height" style="width: 200px; height: 300px">
+  <div id="child" style="width: 100px; height: calc(100% - 50px)"></div>
+</div>
+
+<div id="expression_min_width" style="width: 300px; height: 100px">
+  <div id="child" style="width: 50%; min-width: calc(50% + 16px); height: 50px"></div>
+</div>
+
+<div id="expression_max_width" style="width: 300px; height: 100px">
+  <div id="child" style="width: 100%; max-width: calc(50% - 16px); height: 50px"></div>
+</div>
+
+<div id="expression_flex_basis" style="width: 400px; height: 100px; display: flex">
+  <div id="child" style="flex-basis: calc(50% - 16px); height: 50px"></div>
+</div>

@@ -343,6 +343,23 @@ FloatOptional Node::resolveFlexBasis(
     FlexDirection flexDirection,
     float referenceLength,
     float ownerWidth) const {
+  // Expression flex basis: evaluate directly via Style::resolve().
+  // processFlexBasis() returns Style::SizeLength (no expression support),
+  // so the expression branch must be here, not there.
+  const auto flexBasisHandle = style_.flexBasisHandle();
+  if (flexBasisHandle.isExpression()) {
+    FloatOptional value =
+        style_.resolveHandle(flexBasisHandle, referenceLength);
+    if (style_.boxSizing() == BoxSizing::BorderBox || !value.isDefined()) {
+      return value;
+    }
+    Dimension dim = dimension(flexDirection);
+    FloatOptional dpb = FloatOptional{
+        style_.computePaddingAndBorderForDimension(direction, dim, ownerWidth)};
+    return value + (dpb.isDefined() ? dpb : FloatOptional{0.0});
+  }
+
+  // Existing path — processFlexBasis() handles non-expression cases.
   FloatOptional value = processFlexBasis().resolve(referenceLength);
   if (style_.boxSizing() == BoxSizing::BorderBox) {
     return value;
@@ -359,12 +376,30 @@ FloatOptional Node::resolveFlexBasis(
 
 void Node::processDimensions() {
   for (auto dim : {Dimension::Width, Dimension::Height}) {
-    if (style_.maxDimension(dim).isDefined() &&
+    const auto maxH = style_.maxDimensionHandle(dim);
+    const auto minH = style_.minDimensionHandle(dim);
+    // getSize() returns undefined for Expression handles, so the point/percent
+    // inexactEquals shortcut can't be used when either bound is an expression.
+    // When both bounds are the *same* expression, lock the dimension to it
+    // (comparing node vectors directly) so it stays as definite as the
+    // equivalent point/percent case; otherwise fall back to the main handle.
+    const bool eitherExpression = maxH.isExpression() || minH.isExpression();
+    if (maxH.isExpression() && minH.isExpression()) {
+      if (style_.pool().getExpressionNodes(maxH) ==
+          style_.pool().getExpressionNodes(minH)) {
+        processedDimensions_[yoga::to_underlying(dim)] = maxH;
+      } else {
+        processedDimensions_[yoga::to_underlying(dim)] =
+            style_.dimensionHandle(dim);
+      }
+    } else if (
+        !eitherExpression && style_.maxDimension(dim).isDefined() &&
         yoga::inexactEquals(
             style_.maxDimension(dim), style_.minDimension(dim))) {
-      processedDimensions_[yoga::to_underlying(dim)] = style_.maxDimension(dim);
+      processedDimensions_[yoga::to_underlying(dim)] = maxH;
     } else {
-      processedDimensions_[yoga::to_underlying(dim)] = style_.dimension(dim);
+      processedDimensions_[yoga::to_underlying(dim)] =
+          style_.dimensionHandle(dim);
     }
   }
 }

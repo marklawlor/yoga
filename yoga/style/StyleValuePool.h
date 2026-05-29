@@ -9,9 +9,11 @@
 
 #include <cassert>
 #include <cstdint>
+#include <vector>
 
 #include <yoga/numeric/FloatOptional.h>
 #include <yoga/style/SmallValueBuffer.h>
+#include <yoga/style/StyleExpression.h>
 #include <yoga/style/StyleLength.h>
 #include <yoga/style/StyleSizeLength.h>
 #include <yoga/style/StyleValueHandle.h>
@@ -28,6 +30,7 @@ namespace facebook::yoga {
 class StyleValuePool {
  public:
   void store(StyleValueHandle& handle, StyleLength length) {
+    releaseExpressionSlot(handle);
     if (length.isUndefined()) {
       handle.setType(StyleValueHandle::Type::Undefined);
     } else if (length.isAuto()) {
@@ -40,6 +43,7 @@ class StyleValuePool {
   }
 
   void store(StyleValueHandle& handle, StyleSizeLength sizeValue) {
+    releaseExpressionSlot(handle);
     if (sizeValue.isUndefined()) {
       handle.setType(StyleValueHandle::Type::Undefined);
     } else if (sizeValue.isAuto()) {
@@ -58,11 +62,48 @@ class StyleValuePool {
   }
 
   void store(StyleValueHandle& handle, FloatOptional number) {
+    releaseExpressionSlot(handle);
     if (number.isUndefined()) {
       handle.setType(StyleValueHandle::Type::Undefined);
     } else {
       storeValue(handle, number.unwrap(), StyleValueHandle::Type::Number);
     }
+  }
+
+  void store(StyleValueHandle& handle, std::vector<ExpressionNode> nodes);
+
+  FloatOptional evaluateExpression(
+      StyleValueHandle handle,
+      float referenceLength) const;
+
+  const std::vector<ExpressionNode>& getExpressionNodes(
+      StyleValueHandle handle) const;
+
+  // Structural (conservative) over-approximation: returns true if the
+  // expression tree contains ANY Percent leaf, even when the expression
+  // resolves to a parent-independent constant (e.g. calc(0 * 50%) or
+  // calc(50% - 50%)). It does not evaluate whether the percentage actually
+  // affects the result. The sole caller uses it to gate the "loose percentage"
+  // cross-axis measurement path, so a false positive only yields a suboptimal
+  // sizing-mode choice (MaxContent vs StretchFit), never a wrong value.
+  bool expressionContainsPercent(StyleValueHandle handle) const {
+    if (!handle.isExpression()) return false;
+    for (const auto& node : expressionSlots_[handle.value()]) {
+      if (node.kind == ExpressionNode::Kind::Percent) return true;
+    }
+    return false;
+  }
+
+  bool clearExpression(StyleValueHandle& handle) {
+    if (!handle.isExpression()) return false;
+    store(handle, StyleLength::undefined());
+    return true;
+  }
+
+  bool clearExpressionSize(StyleValueHandle& handle) {
+    if (!handle.isExpression()) return false;
+    store(handle, StyleSizeLength::undefined());
+    return true;
   }
 
   StyleLength getLength(StyleValueHandle handle) const {
@@ -71,6 +112,9 @@ class StyleValuePool {
     } else if (handle.isAuto()) {
       return StyleLength::ofAuto();
     } else {
+      if (handle.isExpression()) {
+        return StyleLength::undefined();
+      }
       assert(
           handle.type() == StyleValueHandle::Type::Point ||
           handle.type() == StyleValueHandle::Type::Percent);
@@ -96,6 +140,9 @@ class StyleValuePool {
     } else if (handle.isKeyword(StyleValueHandle::Keyword::Stretch)) {
       return StyleSizeLength::ofStretch();
     } else {
+      if (handle.isExpression()) {
+        return StyleSizeLength::undefined();
+      }
       assert(
           handle.type() == StyleValueHandle::Type::Point ||
           handle.type() == StyleValueHandle::Type::Percent);
@@ -132,6 +179,14 @@ class StyleValuePool {
   }
 
  private:
+  void releaseExpressionSlot(StyleValueHandle handle) {
+    if (!handle.isExpression()) return;
+    uint16_t slot = handle.value();
+    expressionSlots_[slot].clear();
+    expressionSlots_[slot].shrink_to_fit();
+    freeSlots_.push_back(slot);
+  }
+
   void storeValue(
       StyleValueHandle& handle,
       float value,
@@ -144,6 +199,15 @@ class StyleValuePool {
       handle.setValue(newIndex);
     } else if (isIntegerPackable(value)) {
       handle.setValue(packInlineInteger(value));
+    } else if (!freeBufferChunks_.empty()) {
+      // Reuse a buffer chunk orphaned by a previous value→expression
+      // transition rather than growing the buffer.
+      uint16_t reusedIndex = freeBufferChunks_.back();
+      freeBufferChunks_.pop_back();
+      auto newIndex =
+          buffer_.replace(reusedIndex, std::bit_cast<uint32_t>(value));
+      handle.setValue(newIndex);
+      handle.setValueIsIndexed();
     } else {
       auto newIndex = buffer_.push(std::bit_cast<uint32_t>(value));
       handle.setValue(newIndex);
@@ -189,6 +253,12 @@ class StyleValuePool {
   }
 
   SmallValueBuffer<4> buffer_;
+  std::vector<std::vector<ExpressionNode>> expressionSlots_{};
+  std::vector<uint16_t> freeSlots_{};
+  // Buffer chunks orphaned when a buffer-indexed value is overwritten by an
+  // expression. SmallValueBuffer has no free of its own, so we reclaim them
+  // here for reuse by the next non-inlineable value (see storeValue).
+  std::vector<uint16_t> freeBufferChunks_{};
 };
 
 } // namespace facebook::yoga

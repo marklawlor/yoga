@@ -257,6 +257,17 @@ export type Node = {
   unsetDirtiedFunc(): void;
   unsetMeasureFunc(): void;
   setAlwaysFormsContainingBlock(alwaysFormsContainingBlock: boolean): void;
+  setWidthExpression(expr: string | null): void;
+  setHeightExpression(expr: string | null): void;
+  setMinWidthExpression(expr: string | null): void;
+  setMinHeightExpression(expr: string | null): void;
+  setMaxWidthExpression(expr: string | null): void;
+  setMaxHeightExpression(expr: string | null): void;
+  setFlexBasisExpression(expr: string | null): void;
+  setMarginExpression(edge: Edge, expr: string | null): void;
+  setPaddingExpression(edge: Edge, expr: string | null): void;
+  setPositionExpression(edge: Edge, expr: string | null): void;
+  setGapExpression(gutter: Gutter, expr: string | null): void;
 };
 
 export type Yoga = {
@@ -761,6 +772,115 @@ export default function wrapAssembly(lib: any): Yoga {
       lib._YGNodeSetAlwaysFormsContainingBlock(
         this._ptr,
         alwaysFormsContainingBlock ? 1 : 0,
+      );
+    }
+
+    private applyExpression(
+      clearFn: () => void,
+      setFn: (exprPtr: number) => void,
+      expr: string | null,
+    ): void {
+      if (expr === null) {
+        clearFn();
+        return;
+      }
+      const strPtr = lib.stringToNewUTF8(expr);
+      const exprPtr = lib._jswrap_YGExpressionParse(strPtr);
+      lib._free(strPtr);
+      if (exprPtr === 0) {
+        console.warn(`yoga-layout: failed to parse expression "${expr}"`);
+        clearFn(); // CSS spec: invalid expression → treat as unset
+        return;
+      }
+      setFn(exprPtr);
+      lib._jswrap_YGExpressionFree(exprPtr);
+    }
+
+    setWidthExpression(expr: string | null): void {
+      this.applyExpression(
+        () => lib._jswrap_YGNodeStyleSetWidthExpression(this._ptr, 0),
+        ep => lib._jswrap_YGNodeStyleSetWidthExpression(this._ptr, ep),
+        expr,
+      );
+    }
+
+    setHeightExpression(expr: string | null): void {
+      this.applyExpression(
+        () => lib._jswrap_YGNodeStyleSetHeightExpression(this._ptr, 0),
+        ep => lib._jswrap_YGNodeStyleSetHeightExpression(this._ptr, ep),
+        expr,
+      );
+    }
+
+    setMinWidthExpression(expr: string | null): void {
+      this.applyExpression(
+        () => lib._jswrap_YGNodeStyleSetMinWidthExpression(this._ptr, 0),
+        ep => lib._jswrap_YGNodeStyleSetMinWidthExpression(this._ptr, ep),
+        expr,
+      );
+    }
+
+    setMinHeightExpression(expr: string | null): void {
+      this.applyExpression(
+        () => lib._jswrap_YGNodeStyleSetMinHeightExpression(this._ptr, 0),
+        ep => lib._jswrap_YGNodeStyleSetMinHeightExpression(this._ptr, ep),
+        expr,
+      );
+    }
+
+    setMaxWidthExpression(expr: string | null): void {
+      this.applyExpression(
+        () => lib._jswrap_YGNodeStyleSetMaxWidthExpression(this._ptr, 0),
+        ep => lib._jswrap_YGNodeStyleSetMaxWidthExpression(this._ptr, ep),
+        expr,
+      );
+    }
+
+    setMaxHeightExpression(expr: string | null): void {
+      this.applyExpression(
+        () => lib._jswrap_YGNodeStyleSetMaxHeightExpression(this._ptr, 0),
+        ep => lib._jswrap_YGNodeStyleSetMaxHeightExpression(this._ptr, ep),
+        expr,
+      );
+    }
+
+    setFlexBasisExpression(expr: string | null): void {
+      this.applyExpression(
+        () => lib._jswrap_YGNodeStyleSetFlexBasisExpression(this._ptr, 0),
+        ep => lib._jswrap_YGNodeStyleSetFlexBasisExpression(this._ptr, ep),
+        expr,
+      );
+    }
+
+    setMarginExpression(edge: Edge, expr: string | null): void {
+      this.applyExpression(
+        () => lib._jswrap_YGNodeStyleSetMarginExpression(this._ptr, edge, 0),
+        ep => lib._jswrap_YGNodeStyleSetMarginExpression(this._ptr, edge, ep),
+        expr,
+      );
+    }
+
+    setPaddingExpression(edge: Edge, expr: string | null): void {
+      this.applyExpression(
+        () => lib._jswrap_YGNodeStyleSetPaddingExpression(this._ptr, edge, 0),
+        ep => lib._jswrap_YGNodeStyleSetPaddingExpression(this._ptr, edge, ep),
+        expr,
+      );
+    }
+
+    setPositionExpression(edge: Edge, expr: string | null): void {
+      this.applyExpression(
+        () => lib._jswrap_YGNodeStyleSetPositionExpression(this._ptr, edge, 0),
+        ep => lib._jswrap_YGNodeStyleSetPositionExpression(this._ptr, edge, ep),
+        expr,
+      );
+    }
+
+    setGapExpression(gutter: Gutter, expr: string | null): void {
+      this.applyExpression(
+        () => lib._jswrap_YGNodeStyleSetGapExpression(this._ptr, gutter, 0),
+        ep => lib._jswrap_YGNodeStyleSetGapExpression(this._ptr, gutter, ep),
+        expr,
       );
     }
 
