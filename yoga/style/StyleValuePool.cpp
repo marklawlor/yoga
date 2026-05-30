@@ -56,10 +56,14 @@ void StyleValuePool::store(
 
 FloatOptional StyleValuePool::evaluateExpression(
     StyleValueHandle handle,
-    float referenceLength) const {
+    float referenceLength,
+    const Config* config) const {
   assert(handle.isExpression());
   return evaluate(
-      expressionSlots_[handle.value()], /*rootIndex=*/0, referenceLength);
+      expressionSlots_[handle.value()],
+      /*rootIndex=*/0,
+      referenceLength,
+      config);
 }
 
 const std::vector<ExpressionNode>& StyleValuePool::getExpressionNodes(

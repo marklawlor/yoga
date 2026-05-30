@@ -87,7 +87,7 @@ float Node::dimensionWithMargin(
     const FlexDirection axis,
     const float widthSize) {
   return getLayout().measuredDimension(dimension(axis)) +
-      style_.computeMarginForAxis(axis, widthSize);
+      style_.computeMarginForAxis(axis, widthSize, config_);
 }
 
 bool Node::isLayoutDimensionDefined(const FlexDirection axis) {
@@ -273,10 +273,12 @@ float Node::relativePosition(
   }
   if (style_.isInlineStartPositionDefined(axis, direction) &&
       !style_.isInlineStartPositionAuto(axis, direction)) {
-    return style_.computeInlineStartPosition(axis, direction, axisSize);
+    return style_.computeInlineStartPosition(
+        axis, direction, axisSize, config_);
   }
 
-  return -1 * style_.computeInlineEndPosition(axis, direction, axisSize);
+  return -1 *
+      style_.computeInlineEndPosition(axis, direction, axisSize, config_);
 }
 
 void Node::setPosition(
@@ -309,19 +311,23 @@ void Node::setPosition(
   const auto crossAxisTrailingEdge = inlineEndEdge(crossAxis, direction);
 
   setLayoutPosition(
-      (style_.computeInlineStartMargin(mainAxis, direction, ownerWidth) +
+      (style_.computeInlineStartMargin(
+           mainAxis, direction, ownerWidth, config_) +
        relativePositionMain),
       mainAxisLeadingEdge);
   setLayoutPosition(
-      (style_.computeInlineEndMargin(mainAxis, direction, ownerWidth) +
+      (style_.computeInlineEndMargin(
+           mainAxis, direction, ownerWidth, config_) +
        relativePositionMain),
       mainAxisTrailingEdge);
   setLayoutPosition(
-      (style_.computeInlineStartMargin(crossAxis, direction, ownerWidth) +
+      (style_.computeInlineStartMargin(
+           crossAxis, direction, ownerWidth, config_) +
        relativePositionCross),
       crossAxisLeadingEdge);
   setLayoutPosition(
-      (style_.computeInlineEndMargin(crossAxis, direction, ownerWidth) +
+      (style_.computeInlineEndMargin(
+           crossAxis, direction, ownerWidth, config_) +
        relativePositionCross),
       crossAxisTrailingEdge);
 }
@@ -349,13 +355,13 @@ FloatOptional Node::resolveFlexBasis(
   const auto flexBasisHandle = style_.flexBasisHandle();
   if (flexBasisHandle.isExpression()) {
     FloatOptional value =
-        style_.resolveHandle(flexBasisHandle, referenceLength);
+        style_.resolveHandle(flexBasisHandle, referenceLength, config_);
     if (style_.boxSizing() == BoxSizing::BorderBox || !value.isDefined()) {
       return value;
     }
     Dimension dim = dimension(flexDirection);
-    FloatOptional dpb = FloatOptional{
-        style_.computePaddingAndBorderForDimension(direction, dim, ownerWidth)};
+    FloatOptional dpb = FloatOptional{style_.computePaddingAndBorderForDimension(
+        direction, dim, ownerWidth, config_)};
     return value + (dpb.isDefined() ? dpb : FloatOptional{0.0});
   }
 
@@ -366,8 +372,9 @@ FloatOptional Node::resolveFlexBasis(
   }
 
   Dimension dim = dimension(flexDirection);
-  FloatOptional dimensionPaddingAndBorder = FloatOptional{
-      style_.computePaddingAndBorderForDimension(direction, dim, ownerWidth)};
+  FloatOptional dimensionPaddingAndBorder =
+      FloatOptional{style_.computePaddingAndBorderForDimension(
+          direction, dim, ownerWidth, config_)};
 
   return value +
       (dimensionPaddingAndBorder.isDefined() ? dimensionPaddingAndBorder

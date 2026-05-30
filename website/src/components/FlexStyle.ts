@@ -113,6 +113,7 @@ export type FlexStyle = {
 function isCssMathExpression(value: string): boolean {
   return (
     value.startsWith('calc(') ||
+    value.startsWith('env(') ||
     value.startsWith('min(') ||
     value.startsWith('max(') ||
     value.startsWith('clamp(')

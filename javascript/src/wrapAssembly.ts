@@ -59,6 +59,9 @@ export type Config = {
   setErrata(errata: Errata): void;
   useWebDefaults(): boolean;
   setUseWebDefaults(useWebDefaults: boolean): void;
+  setEnv(name: string, value: number | undefined | null): void;
+  removeEnv(name: string): void;
+  getEnv(name: string): number;
 };
 
 export type DirtiedFunction = (node: Node) => void;
@@ -426,6 +429,30 @@ export default function wrapAssembly(lib: any): Yoga {
 
     setUseWebDefaults(useWebDefaults: boolean): void {
       lib._YGConfigSetUseWebDefaults(this._ptr, useWebDefaults ? 1 : 0);
+    }
+
+    setEnv(name: string, value: number | undefined | null): void {
+      // undefined / null / NaN all clear the variable: the native side treats
+      // YGUndefined (NaN) as a removal (see YGConfigSetEnv).
+      const asNumber = value === undefined || value === null ? NaN : value;
+      const strPtr = lib.stringToNewUTF8(name);
+      lib._YGConfigSetEnv(this._ptr, strPtr, asNumber);
+      lib._free(strPtr);
+    }
+
+    removeEnv(name: string): void {
+      const strPtr = lib.stringToNewUTF8(name);
+      lib._YGConfigRemoveEnv(this._ptr, strPtr);
+      lib._free(strPtr);
+    }
+
+    getEnv(name: string): number {
+      // Returns the stored value, or NaN (YGUndefined) if the variable is
+      // unset. No env() fallback is applied.
+      const strPtr = lib.stringToNewUTF8(name);
+      const value = lib._YGConfigGetEnv(this._ptr, strPtr);
+      lib._free(strPtr);
+      return value;
     }
   }
 

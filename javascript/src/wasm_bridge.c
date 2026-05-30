@@ -167,6 +167,7 @@ EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionSubtract(YGExpressionRef
 EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionMultiply(YGExpressionRef a, YGExpressionRef b) { return YGExpressionMultiply(a, b); }
 EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionDivide(YGExpressionRef a, YGExpressionRef b) { return YGExpressionDivide(a, b); }
 EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionClamp(YGExpressionRef mn, YGExpressionRef val, YGExpressionRef mx) { return YGExpressionClamp(mn, val, mx); }
+EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionEnv(const char* name, YGExpressionRef fallback) { return YGExpressionEnv(name, fallback); }
 EMSCRIPTEN_KEEPALIVE void jswrap_YGExpressionFree(YGExpressionRef expr) { YGExpressionFree(expr); }
 EMSCRIPTEN_KEEPALIVE YGExpressionRef jswrap_YGExpressionParse(const char* str) { return YGExpressionParse(str); }
 

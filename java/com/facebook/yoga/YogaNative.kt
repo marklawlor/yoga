@@ -41,6 +41,13 @@ public object YogaNative {
 
   @JvmStatic public external fun jni_YGConfigSetLoggerJNI(nativePointer: Long, logger: YogaLogger?)
 
+  @JvmStatic
+  public external fun jni_YGConfigSetEnvJNI(nativePointer: Long, name: String, value: Float)
+
+  @JvmStatic public external fun jni_YGConfigRemoveEnvJNI(nativePointer: Long, name: String)
+
+  @JvmStatic public external fun jni_YGConfigGetEnvJNI(nativePointer: Long, name: String): Float
+
   // YGNode related
   @JvmStatic public external fun jni_YGNodeNewJNI(): Long
 

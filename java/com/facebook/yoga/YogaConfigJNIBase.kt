@@ -7,8 +7,11 @@
 
 package com.facebook.yoga
 
+import com.facebook.yoga.YogaNative.jni_YGConfigGetEnvJNI
 import com.facebook.yoga.YogaNative.jni_YGConfigGetErrataJNI
 import com.facebook.yoga.YogaNative.jni_YGConfigNewJNI
+import com.facebook.yoga.YogaNative.jni_YGConfigRemoveEnvJNI
+import com.facebook.yoga.YogaNative.jni_YGConfigSetEnvJNI
 import com.facebook.yoga.YogaNative.jni_YGConfigSetErrataJNI
 import com.facebook.yoga.YogaNative.jni_YGConfigSetExperimentalFeatureEnabledJNI
 import com.facebook.yoga.YogaNative.jni_YGConfigSetLoggerJNI
@@ -59,6 +62,17 @@ private constructor(@JvmField protected var nativePointer: Long) : YogaConfig() 
   }
 
   public override fun getLogger(): YogaLogger? = _logger
+
+  public override fun setEnv(name: String, value: Float) {
+    YogaNative.jni_YGConfigSetEnvJNI(nativePointer, name, value)
+  }
+
+  public override fun removeEnv(name: String) {
+    YogaNative.jni_YGConfigRemoveEnvJNI(nativePointer, name)
+  }
+
+  public override fun getEnv(name: String): Float =
+      YogaNative.jni_YGConfigGetEnvJNI(nativePointer, name)
 
   public override fun getNativePointer(): Long = nativePointer
 }

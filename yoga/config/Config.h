@@ -8,11 +8,17 @@
 #pragma once
 
 #include <bitset>
+#include <cstdint>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <vector>
 
 #include <yoga/Yoga.h>
 #include <yoga/enums/Errata.h>
 #include <yoga/enums/ExperimentalFeature.h>
 #include <yoga/enums/LogLevel.h>
+#include <yoga/numeric/FloatOptional.h>
 
 // Tag struct used to form the opaque YGConfigRef for the public C API
 struct YGConfig {};
@@ -30,9 +36,24 @@ bool configUpdateInvalidatesLayout(
     const Config& oldConfig,
     const Config& newConfig);
 
+// CSS env() name interning. A PROCESS-GLOBAL, append-only, thread-safe registry
+// maps env variable names to stable uint16 ids, shared across all Configs and
+// threads. It is global (not per-Config) so an expression can be serialised
+// with no Config in scope — e.g. React Native's Fabric prop-conversion path,
+// which has no node/config — and so a stored id is valid in ANY Config (each
+// Config holds only the id -> value mapping). The registry is touched only at
+// serialise / setEnv time, never in the layout hot path (evaluate reads the
+// per-Config value vector by id directly).
+//
+// internEnvName registers `name` if absent and returns its id. lookupEnvName
+// never inserts and returns kEnvNameNotFound for an unregistered name.
+inline constexpr uint16_t kEnvNameNotFound = 0xFFFF;
+uint16_t internEnvName(std::string_view name);
+uint16_t lookupEnvName(std::string_view name);
+
 class YG_EXPORT Config : public ::YGConfig {
  public:
-  explicit Config(YGLogger logger) : logger_{logger} {}
+  explicit Config(YGLogger logger);
 
   void setUseWebDefaults(bool useWebDefaults);
   bool useWebDefaults() const;
@@ -49,6 +70,26 @@ class YG_EXPORT Config : public ::YGConfig {
 
   void setPointScaleFactor(float pointScaleFactor);
   float getPointScaleFactor() const;
+
+  // CSS env() support.
+  //
+  // Env variable names are interned to a stable uint16 id by the PROCESS-GLOBAL
+  // registry (see internEnvName, above) — not per-Config — so an expression can
+  // be serialised with no Config in scope (e.g. React Native's Fabric prop
+  // path) and the id is valid in any Config. Each Config holds only the
+  // id -> value mapping (envValues_); an undefined FloatOptional means the name
+  // is unset on this config. Only setEnv / removeEnv (which change a value) bump
+  // version_ and thereby invalidate cached layout under this config.
+  FloatOptional getEnvValueById(uint16_t id) const;
+  void setEnv(std::string_view name, FloatOptional value);
+  void removeEnv(std::string_view name);
+  FloatOptional getEnv(std::string_view name) const;
+  // Replaces this config's entire env value table with `src`'s. Valid because
+  // env name ids are process-global (see internEnvName), so the id -> value
+  // vector is directly comparable across configs with no remapping. Bumps
+  // version_ (and invalidates cached layout) only if the table actually
+  // changed. Used to carry env values forward across cloned configs.
+  void copyEnvFrom(const Config& src);
 
   void setContext(void* context);
   void* getContext() const;
@@ -79,6 +120,13 @@ class YG_EXPORT Config : public ::YGConfig {
   Errata errata_ = Errata::None;
   float pointScaleFactor_ = 1.0f;
   void* context_ = nullptr;
+
+  // env() value store, indexed by the process-global env name id (see
+  // internEnvName). `mutable` so a value slot can be sized/seeded through a
+  // const Config*. An id past the end of the vector is treated as unset, so a
+  // name registered globally but never set on this config resolves to undefined.
+  // Holds values only; the name -> id mapping is global, not here.
+  mutable std::vector<FloatOptional> envValues_{};
 };
 
 inline Config* resolveRef(const YGConfigRef ref) {

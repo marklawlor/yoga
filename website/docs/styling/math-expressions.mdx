@@ -36,6 +36,9 @@ expression string as the property value:
 
 Expressions may be arbitrarily nested: `calc(min(50%, 200) - 16)` is valid.
 
+Expressions may also reference [Env Variables](/docs/styling/env) via `env()`,
+for example `calc(env(safe-area-inset-top) + 16)`.
+
 Note: Yoga is unitless — use bare numbers (`32`) not CSS units (`32px`).
 
 ## Supported properties
@@ -61,7 +64,8 @@ Maths expressions work on all length-accepting style properties:
 
 - Keyword operands (`fit-content`, `max-content`, `stretch`) inside
   expressions are not yet supported.
-- `var()` and `env()` substitution must be performed by the consumer (e.g.
-  React Native) before passing an expression to Yoga.
+- `var()` substitution must be performed by the consumer (e.g. React Native)
+  before passing an expression to Yoga. (`env()` is supported natively — see
+  [Env Variables](/docs/styling/env).)
 - CSS unit suffixes (`px`, `em`, `rem`, etc.) are not supported — Yoga values
   are unitless.

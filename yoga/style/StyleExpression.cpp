@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cassert>
 
+#include <yoga/config/Config.h>
 #include <yoga/debug/Log.h>
 #include <yoga/numeric/Comparison.h>
 #include <yoga/style/StyleExpression.h>
@@ -44,6 +45,9 @@ static bool isNumberType(
       return isNumberType(pool, node.children.a) &&
           isNumberType(pool, node.children.b) &&
           isNumberType(pool, node.children.c);
+    case ExpressionNode::Kind::Env:
+      // env() is length-compatible (point value), never a <number>.
+      return false;
     default: // Value, Percent, Multiply, Divide
       return false;
   }
@@ -62,6 +66,9 @@ static bool isDivisorType(
       return true;
     case ExpressionNode::Kind::Percent:
       return false;
+    case ExpressionNode::Kind::Env:
+      // env() is a length value, never a legal divisor.
+      return false;
     case ExpressionNode::Kind::Add:
     case ExpressionNode::Kind::Subtract:
     case ExpressionNode::Kind::Multiply:
@@ -79,8 +86,11 @@ static bool isDivisorType(
   }
 }
 
-FloatOptional
-evaluate(const std::vector<ExpressionNode>& pool, uint16_t idx, float ref) {
+FloatOptional evaluate(
+    const std::vector<ExpressionNode>& pool,
+    uint16_t idx,
+    float ref,
+    const Config* config) {
   assert(idx < pool.size());
   const ExpressionNode& node = pool[idx];
   switch (node.kind) {
@@ -90,6 +100,21 @@ evaluate(const std::vector<ExpressionNode>& pool, uint16_t idx, float ref) {
       return finiteOrUndefined(node.floatValue * ref * 0.01f);
     case ExpressionNode::Kind::Number:
       return finiteOrUndefined(node.floatValue);
+    case ExpressionNode::Kind::Env: {
+      // Late-bound: look up the value by interned name id from the Config's
+      // env store. If defined, use it (fallback ignored). Else if a fallback
+      // subtree exists, evaluate it. Else IACVT -> undefined.
+      if (config != nullptr) {
+        FloatOptional stored = config->getEnvValueById(node.children.a);
+        if (stored.isDefined()) {
+          return finiteOrUndefined(stored.unwrap());
+        }
+      }
+      if (node.children.b != ExpressionNode::kUnusedChild) {
+        return evaluate(pool, node.children.b, ref, config);
+      }
+      return FloatOptional{};
+    }
     case ExpressionNode::Kind::Min: {
       // CSS spec: all arguments must be the same type — mixing a <number> with
       // a <length>/percentage among the args is IACVT (same rule as Add/Sub).
@@ -102,8 +127,8 @@ evaluate(const std::vector<ExpressionNode>& pool, uint16_t idx, float ref) {
             "same type (mixing <number> with <length> is IACVT)\n");
         return FloatOptional{};
       }
-      auto a = evaluate(pool, node.children.a, ref);
-      auto b = evaluate(pool, node.children.b, ref);
+      auto a = evaluate(pool, node.children.a, ref, config);
+      auto b = evaluate(pool, node.children.b, ref, config);
       if (!a.isDefined() || !b.isDefined())
         return FloatOptional{};
       return finiteOrUndefined(std::min(a.unwrap(), b.unwrap()));
@@ -119,8 +144,8 @@ evaluate(const std::vector<ExpressionNode>& pool, uint16_t idx, float ref) {
             "same type (mixing <number> with <length> is IACVT)\n");
         return FloatOptional{};
       }
-      auto a = evaluate(pool, node.children.a, ref);
-      auto b = evaluate(pool, node.children.b, ref);
+      auto a = evaluate(pool, node.children.a, ref, config);
+      auto b = evaluate(pool, node.children.b, ref, config);
       if (!a.isDefined() || !b.isDefined())
         return FloatOptional{};
       return finiteOrUndefined(std::max(a.unwrap(), b.unwrap()));
@@ -138,9 +163,9 @@ evaluate(const std::vector<ExpressionNode>& pool, uint16_t idx, float ref) {
             "same type (mixing <number> with <length> is IACVT)\n");
         return FloatOptional{};
       }
-      auto minVal = evaluate(pool, node.children.a, ref);
-      auto val = evaluate(pool, node.children.b, ref);
-      auto maxVal = evaluate(pool, node.children.c, ref);
+      auto minVal = evaluate(pool, node.children.a, ref, config);
+      auto val = evaluate(pool, node.children.b, ref, config);
+      auto maxVal = evaluate(pool, node.children.c, ref, config);
       if (!minVal.isDefined() || !val.isDefined() || !maxVal.isDefined())
         return FloatOptional{};
       return finiteOrUndefined(
@@ -158,8 +183,8 @@ evaluate(const std::vector<ExpressionNode>& pool, uint16_t idx, float ref) {
             "type (<number> + <length> is IACVT)\n");
         return FloatOptional{};
       }
-      auto a = evaluate(pool, node.children.a, ref);
-      auto b = evaluate(pool, node.children.b, ref);
+      auto a = evaluate(pool, node.children.a, ref, config);
+      auto b = evaluate(pool, node.children.b, ref, config);
       if (!a.isDefined() || !b.isDefined())
         return FloatOptional{};
       return finiteOrUndefined(a.unwrap() + b.unwrap());
@@ -175,8 +200,8 @@ evaluate(const std::vector<ExpressionNode>& pool, uint16_t idx, float ref) {
             "same type (<number> - <length> is IACVT)\n");
         return FloatOptional{};
       }
-      auto a = evaluate(pool, node.children.a, ref);
-      auto b = evaluate(pool, node.children.b, ref);
+      auto a = evaluate(pool, node.children.a, ref, config);
+      auto b = evaluate(pool, node.children.b, ref, config);
       if (!a.isDefined() || !b.isDefined())
         return FloatOptional{};
       return finiteOrUndefined(a.unwrap() - b.unwrap());
@@ -195,8 +220,8 @@ evaluate(const std::vector<ExpressionNode>& pool, uint16_t idx, float ref) {
             "<number> operand (IACVT)\n");
         return FloatOptional{};
       }
-      auto a = evaluate(pool, node.children.a, ref);
-      auto b = evaluate(pool, node.children.b, ref);
+      auto a = evaluate(pool, node.children.a, ref, config);
+      auto b = evaluate(pool, node.children.b, ref, config);
       if (!a.isDefined() || !b.isDefined())
         return FloatOptional{};
       return finiteOrUndefined(a.unwrap() * b.unwrap());
@@ -211,14 +236,14 @@ evaluate(const std::vector<ExpressionNode>& pool, uint16_t idx, float ref) {
             "dimensionless (IACVT)\n");
         return FloatOptional{};
       }
-      auto b = evaluate(pool, node.children.b, ref);
+      auto b = evaluate(pool, node.children.b, ref, config);
       if (!b.isDefined() || b.unwrap() == 0.0f) {
         yoga::log(
             LogLevel::Warn,
             "yoga-expression: invalid calc() — division by zero (IACVT)\n");
         return FloatOptional{};
       }
-      auto a = evaluate(pool, node.children.a, ref);
+      auto a = evaluate(pool, node.children.a, ref, config);
       if (!a.isDefined())
         return FloatOptional{};
       return finiteOrUndefined(a.unwrap() / b.unwrap());
